@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sintesi e analisi · Gruppo 051 / Lizard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#1f3a5f; --blue:#2e6ca4; --lblue:#7aa9d0; --green:#2e7d32;
+    --red:#c0392b; --amber:#b8860b; --light:#eef3f8; --line:#d7e0ea;
+    --ink:#1c2733; --muted:#5d6b7a; --bg:#f5f7fa; --card:#ffffff;
+    --shadow:0 1px 3px rgba(20,40,70,.08),0 6px 24px rgba(20,40,70,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+  #progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--blue),var(--navy));z-index:100;transition:width .1s}
+  /* Layout */
+  .wrap{display:grid;grid-template-columns:270px 1fr;max-width:1280px;margin:0 auto;gap:0}
+  /* Sidebar */
+  aside{position:sticky;top:0;height:100vh;overflow-y:auto;padding:28px 20px;border-right:1px solid var(--line);background:#fff}
+  .brand{font-weight:800;color:var(--navy);font-size:1.05rem;line-height:1.25;margin-bottom:4px}
+  .brand small{display:block;font-weight:500;color:var(--muted);font-size:.78rem;margin-top:4px}
+  nav{margin-top:22px;display:flex;flex-direction:column;gap:2px}
+  nav a{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--muted);
+    padding:9px 12px;border-radius:8px;font-size:.9rem;font-weight:500;transition:.15s}
+  nav a .n{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;
+    border-radius:6px;background:var(--light);color:var(--navy);font-size:.72rem;font-weight:700;flex:0 0 auto}
+  nav a:hover{background:var(--light);color:var(--navy)}
+  nav a.active{background:var(--navy);color:#fff}
+  nav a.active .n{background:rgba(255,255,255,.2);color:#fff}
+  /* Main */
+  main{padding:40px 48px 80px;max-width:900px}
+  .hero h1{font-size:2rem;color:var(--navy);margin:0 0 6px;line-height:1.15;font-weight:800}
+  .hero .sub{color:var(--muted);font-size:1.05rem;margin:0}
+  .hero .meta{margin-top:14px;font-size:.82rem;color:var(--muted);background:#fff;border:1px solid var(--line);
+    border-radius:10px;padding:12px 16px}
+  section{padding-top:46px;margin-top:6px}
+  h2.sec{font-size:1.5rem;color:var(--navy);font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:12px}
+  h2.sec .num{font-size:.85rem;background:var(--navy);color:#fff;width:30px;height:30px;border-radius:9px;
+    display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+  h3{color:var(--blue);font-size:1.08rem;margin:26px 0 8px;font-weight:700}
+  p{margin:10px 0}
+  .lead{font-size:1.05rem}
+  .muted{color:var(--muted)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;box-shadow:var(--shadow);margin:16px 0}
+  .callout{border-left:4px solid var(--amber);background:#fbf6e9;border-radius:0 10px 10px 0;padding:12px 18px;margin:16px 0;font-size:.95rem}
+  .callout.info{border-color:var(--blue);background:#eef5fb}
+  /* KPI */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow);text-align:center}
+  .kpi .v{font-size:1.5rem;font-weight:800;color:var(--navy);line-height:1.1}
+  .kpi .v.pos{color:var(--green)} .kpi .v.neg{color:var(--red)}
+  .kpi .l{font-size:.78rem;color:var(--muted);margin-top:6px}
+  /* tables */
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.9rem;background:#fff;
+    border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  thead th{background:var(--navy);color:#fff;font-weight:600;text-align:right;padding:10px 14px}
+  thead th:first-child{text-align:left}
+  thead.alt th:nth-child(n+4){background:#7a3b3b}
+  tbody td{padding:9px 14px;border-top:1px solid var(--line);text-align:right}
+  tbody td:first-child{text-align:left}
+  tbody tr:nth-child(even){background:#f7fafd}
+  tr.tot td{font-weight:700;background:var(--light)!important}
+  td.pos{color:var(--green);font-weight:600} td.neg{color:var(--red);font-weight:600}
+  .chart-box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px 10px;box-shadow:var(--shadow);margin:18px 0}
+  .chart-box .cap{font-size:.8rem;color:var(--muted);margin-top:10px}
+  .chart-holder{position:relative;height:320px}
+  /* group diagram */
+  .tree{display:flex;flex-direction:column;gap:0;margin:18px 0}
+  .node{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 18px;box-shadow:var(--shadow)}
+  .node.holding{border-left:5px solid var(--navy)}
+  .node .t{font-weight:800;color:var(--navy)} .node .d{font-size:.88rem;color:var(--muted);margin-top:3px}
+  .children{margin-left:34px;border-left:2px dashed var(--line);padding-left:24px;margin-top:0}
+  .children .node{margin-top:14px;border-left:5px solid var(--blue)}
+  .children .node.dim{border-left-color:var(--lblue)}
+  .badge{display:inline-block;background:var(--light);color:var(--navy);font-size:.72rem;font-weight:700;
+    padding:2px 8px;border-radius:20px;margin-left:6px}
+  /* judgement */
+  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+  .panel{border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+  .panel.good{background:#f0f7f0;border:1px solid #cfe6cf}
+  .panel.warn{background:#fbf6e9;border:1px solid #ecdfba}
+  .panel h4{margin:0 0 10px;font-size:1rem}
+  .panel.good h4{color:var(--green)} .panel.warn h4{color:var(--amber)}
+  .panel ul{margin:0;padding-left:18px;font-size:.9rem}
+  .panel li{margin:6px 0}
+  footer{border-top:1px solid var(--line);margin-top:50px;padding-top:18px;font-size:.78rem;color:var(--muted)}
+  /* responsive */
+  @media(max-width:880px){
+    .wrap{grid-template-columns:1fr}
+    aside{position:static;height:auto;border-right:none;border-bottom:1px solid var(--line)}
+    nav{flex-direction:row;flex-wrap:wrap}
+    main{padding:28px 20px 60px}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .cols2{grid-template-columns:1fr}
+    .children{margin-left:14px;padding-left:14px}
+  }
+
+  /* ── loader ── */
+  #loader{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;z-index:9999;
+    transition:opacity .5s ease, visibility .5s ease}
+  #loader.hide{opacity:0;visibility:hidden}
+  .ld-logo{color:#fff;font-size:1.25rem;font-weight:800;letter-spacing:.04em;margin-bottom:28px;opacity:.9}
+  .ld-logo span{color:var(--lblue)}
+  .ld-ring{width:48px;height:48px;border:3px solid rgba(255,255,255,.15);
+    border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+  .ld-label{color:rgba(255,255,255,.5);font-size:.78rem;margin-top:18px;letter-spacing:.06em}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ── password gate ── */
+  #gate{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;
+    justify-content:center;z-index:10000;flex-direction:column;gap:0}
+  #gate.hide{display:none}
+  .gate-box{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+    border-radius:18px;padding:40px 44px;width:320px;text-align:center;
+    box-shadow:0 24px 64px rgba(0,0,0,.4)}
+  .gate-logo{color:#fff;font-size:1.1rem;font-weight:800;letter-spacing:.04em;margin-bottom:6px}
+  .gate-logo span{color:var(--lblue)}
+  .gate-sub{color:rgba(255,255,255,.4);font-size:.78rem;margin-bottom:28px}
+  .gate-box input{width:100%;padding:11px 14px;border-radius:9px;border:1px solid rgba(255,255,255,.18);
+    background:rgba(255,255,255,.08);color:#fff;font-size:1rem;letter-spacing:.12em;
+    outline:none;text-align:center;transition:border-color .2s}
+  .gate-box input:focus{border-color:var(--lblue)}
+  .gate-box input::placeholder{color:rgba(255,255,255,.3);letter-spacing:0}
+  .gate-btn{margin-top:14px;width:100%;padding:11px;background:var(--blue);color:#fff;
+    border:none;border-radius:9px;font-size:.95rem;font-weight:700;cursor:pointer;
+    transition:background .2s}
+  .gate-btn:hover{background:#1f5a8f}
+  .gate-err{color:#e57373;font-size:.8rem;margin-top:10px;min-height:18px;transition:opacity .2s}
+  .gate-lock{font-size:2rem;margin-bottom:18px;opacity:.6}
+</style>
+</head>
+<body>
+<div id="gate">
+  <div class="gate-box">
+    <div class="gate-lock">🔒</div>
+    <input id="gateInput" type="password" placeholder="Password" autocomplete="off" />
+    <button class="gate-btn" onclick="checkGate()">Accedi</button>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
+<div id="loader">
+  <div class="ld-logo">Gruppo <span>051</span> · Lizard</div>
+  <div class="ld-ring"></div>
+  <div class="ld-label">Caricamento in corso…</div>
+</div>
+<div id="progress"></div>
+<div class="wrap">
+  <aside>
+    <div class="brand">Gruppo 051 · Lizard<small>Documento di sintesi e analisi · dati al 31/12/2025</small></div>
+    <nav id="toc">
+      <a href="#sintesi"><span class="n">1</span> In sintesi</a>
+      <a href="#struttura"><span class="n">2</span> Struttura del gruppo</a>
+      <a href="#lizard"><span class="n">3</span> I numeri di Lizard</a>
+      <a href="#holding"><span class="n">4</span> La holding 051</a>
+      <a href="#controllate"><span class="n">5</span> Le controllate</a>
+      <a href="#organico"><span class="n">6</span> Organico e stipendi</a>
+      <a href="#creditidebiti"><span class="n">7</span> Crediti e debiti</a>
+      <a href="#giudizio"><span class="n">8</span> Giudizio</a>
+      <a href="#appA"><span class="n">A</span> Appendice A — Lizard</a>
+      <a href="#appB"><span class="n">B</span> Appendice B — 051</a>
+      <a href="#appC"><span class="n">C</span> Appendice C — Sedi</a>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="hero">
+      <h1>Documento di sintesi e analisi</h1>
+      <p class="sub">Gruppo <strong>051 S.r.l.</strong> &mdash; <strong>Lizard S.r.l.</strong></p>
+      <div class="meta">Elaborato sui fascicoli storici e sui bilanci d'esercizio al 31/12/2025 (Registro Imprese CCIAA di Trento, estrazione 17/06/2026). Importi in euro. Documento divulgativo, per una lettura non specialistica.</div>
+    </div>
+
+    <!-- 1 -->
+    <section id="sintesi">
+      <h2 class="sec"><span class="num">1</span> In sintesi</h2>
+      <p class="lead">Le due visure descrivono <strong>un piccolo gruppo familiare di Trento</strong>, riorganizzato nel 2025. Al vertice una <strong>holding</strong> (051 S.r.l.) che possiede il 100% di due società operative: <strong>Lizard</strong> (commercio all'ingrosso di apparecchiature elettroniche, dal 2004 &mdash; il vero motore) e <strong>Nextai</strong> (società minore, in perdita). La holding detiene anche gli immobili e i mutui.</p>
+      <div class="callout"><strong>In una frase:</strong> gruppo sano ma di piccola dimensione e a bassa marginalità. Lizard nel 2025 è tornata a crescere e all'utile dopo un 2024 in perdita; la holding chiude in utile il primo anno. Attenzione a <strong>margini sottili</strong>, <strong>cassa a zero</strong> in entrambe le operative e <strong>forte accentramento</strong> su un'unica persona.</p></div>
+      <div class="kpis">
+        <div class="kpi"><div class="v">€ 4,20 mln</div><div class="l">Ricavi Lizard 2025</div></div>
+        <div class="kpi"><div class="v pos">+€ 67.692</div><div class="l">Utile Lizard 2025</div></div>
+        <div class="kpi"><div class="v pos">+€ 13.627</div><div class="l">Utile holding 051 2025</div></div>
+        <div class="kpi"><div class="v">8 + 1</div><div class="l">Addetti (Lizard + holding)</div></div>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section id="struttura">
+      <h2 class="sec"><span class="num">2</span> Com'è fatto il gruppo</h2>
+      <p>Nel febbraio 2025 Lizard ha effettuato una <strong>scissione parziale</strong>: ha scorporato il ramo immobiliare (due uffici a Trento), i software e i mutui, trasferendoli alla nuova <strong>051 S.r.l.</strong> Poi i soci hanno conferito a 051 le quote di Lizard e Nextai. Ne risulta la struttura classica "a cassetta":</p>
+      <div class="tree">
+        <div class="node holding"><div class="t">051 S.r.l. — Holding <span class="badge">capogruppo</span></div><div class="d">Possiede immobili e partecipazioni. Incassa affitti e fattura servizi alle controllate. Costituita 10/02/2025 · capitale € 32.000 · 1 addetto.</div></div>
+        <div class="children">
+          <div class="node"><div class="t">Lizard S.r.l. <span class="badge">100%</span></div><div class="d">Società operativa storica (2004). Commercio all'ingrosso di apparecchiature elettroniche: qui si concentra il fatturato. Capitale € 12.000 · 8 addetti.</div></div>
+          <div class="node dim"><div class="t">Nextai S.r.l. <span class="badge">100%</span></div><div class="d">Società minore, controllata al 100%. Capitale € 10.000 · in perdita nel 2025. Disponibili solo dati di sintesi (dalla nota della holding).</div></div>
+        </div>
+      </div>
+      <div class="callout info"><em>Perché si fa:</em> separare gli immobili dall'attività commerciale è una scelta classica di protezione del patrimonio e passaggio generazionale. Di per sé non è né positiva né negativa.</div>
+    </section>
+
+    <!-- 3 -->
+    <section id="lizard">
+      <h2 class="sec"><span class="num">3</span> I numeri di Lizard</h2>
+      <p>Lizard è il cuore del gruppo. Per 2025 e 2024 disponiamo del <strong>bilancio completo</strong>; per il 2023 solo dei totali di sintesi.</p>
+      <table>
+        <thead><tr><th>Lizard S.r.l.</th><th>2023</th><th>2024</th><th>2025</th></tr></thead>
+        <tbody>
+          <tr><td>Ricavi delle vendite</td><td>3.886.136</td><td>3.315.228</td><td>4.203.850</td></tr>
+          <tr><td>Valore della produzione</td><td>3.922.068</td><td>3.373.948</td><td>4.279.209</td></tr>
+          <tr><td>Risultato operativo (EBIT)</td><td>n.d.</td><td class="neg">-165.716</td><td class="pos">+94.008</td></tr>
+          <tr class="tot"><td>Utile / Perdita d'esercizio</td><td class="pos">+34.004</td><td class="neg">-204.138</td><td class="pos">+67.692</td></tr>
+          <tr><td>Patrimonio netto (fine anno)</td><td>n.d.</td><td>310.448</td><td>252.962</td></tr>
+          <tr><td>Addetti (fine anno)</td><td>—</td><td>11</td><td>7</td></tr>
+        </tbody>
+      </table>
+      <div class="chart-box"><div class="chart-holder"><canvas id="cRicavi"></canvas></div>
+        <div class="cap">Barre = ricavi; linea = utile/perdita. Si vede il calo del 2024 (in rosso) e la doppia ripresa del 2025.</div></div>
+      <ul>
+        <li><strong>Ricavi a zig-zag ma in ripresa:</strong> dopo un 2024 in calo (−15% sul 2023), nel 2025 salgono a 4,2 mln, massimo del triennio (+27%).</li>
+        <li><strong>Recupero operativo reale:</strong> il risultato operativo passa da −165.716 a +94.008. Il ritorno all'utile non è un fatto contabile.</li>
+        <li><strong>Margini molto sottili:</strong> l'utile 2025 è ~1,6% dei ricavi — tipico dell'ingrosso. Poco cuscinetto: bastano piccole variazioni per tornare in perdita (come nel 2024).</li>
+        <li><strong>Patrimonio in calo per la scissione, non per perdite:</strong> il PN scende da 310.448 a 252.962 perché € 125.179 sono stati trasferiti a 051. Resta oltre 20× il capitale sociale.</li>
+      </ul>
+
+      <h3>Dove vanno i soldi: la struttura dei costi</h3>
+      <div class="chart-box"><div class="chart-holder"><canvas id="cCosti"></canvas></div>
+        <div class="cap">Su € 4,19 mln di costi totali, il 72% è acquisto di merce.</div></div>
+      <ul>
+        <li><strong>72% è acquisto di merce</strong> (€ 3,03 mln): Lizard compra e rivende. Ecco perché i margini sono sottili.</li>
+        <li><strong>Il personale pesa solo il 9%</strong> (€ 383 mila): attività commerciale, non produttiva. Nei "servizi" (€ 465 mila) rientra il <strong>compenso amministratore di € 100.000</strong>.</li>
+      </ul>
+
+      <h3>Lo stato patrimoniale di Lizard</h3>
+      <table>
+        <thead class="alt"><tr><th>Attivo</th><th>2025</th><th>2024</th><th>Passivo</th><th>2025</th><th>2024</th></tr></thead>
+        <tbody>
+          <tr><td>Immobilizzazioni</td><td>90.025</td><td>755.430</td><td>Patrimonio netto</td><td>252.962</td><td>310.448</td></tr>
+          <tr><td>Rimanenze (merci)</td><td>198.003</td><td>269.385</td><td>Fondi rischi</td><td>20.000</td><td>—</td></tr>
+          <tr><td>Crediti</td><td>1.751.387</td><td>1.318.589</td><td>TFR</td><td>70.972</td><td>101.682</td></tr>
+          <tr><td>Liquidità (cassa)</td><td>0</td><td>0</td><td>Debiti</td><td>1.678.692</td><td>1.889.425</td></tr>
+          <tr><td>Ratei e risconti</td><td>35.601</td><td>71.835</td><td>Ratei e risconti</td><td>52.390</td><td>113.684</td></tr>
+          <tr class="tot"><td>TOTALE</td><td>2.075.016</td><td>2.415.239</td><td>TOTALE</td><td>2.075.016</td><td>2.415.239</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li><strong>Il bilancio si "sgonfia"</strong> (da 2,42 a 2,08 mln): con la scissione escono immobili (immobilizzazioni da 755 a 90 mila) e mutui. Lizard è ora una società "pura" di commercio.</li>
+        <li><strong>Cassa a zero anche qui:</strong> il fabbisogno è coperto da uno scoperto di conto corrente (€ 105.890). Dettaglio nella sezione 7.</li>
+      </ul>
+    </section>
+
+    <!-- 4 -->
+    <section id="holding">
+      <h2 class="sec"><span class="num">4</span> La holding 051</h2>
+      <p>Il 2025 è il <strong>primo esercizio</strong>, quindi senza confronto. Abbiamo il bilancio completo.</p>
+      <h3>Conto economico — come si forma l'utile</h3>
+      <table>
+        <thead><tr><th>051 S.r.l. — Conto economico 2025</th><th>Importo</th></tr></thead>
+        <tbody>
+          <tr><td>Valore della produzione (affitti € 77.776 + servizi € 49.150)</td><td>126.928</td></tr>
+          <tr><td>Costi della produzione</td><td>-95.500</td></tr>
+          <tr class="tot"><td>= Risultato operativo</td><td>31.428</td></tr>
+          <tr><td>Oneri finanziari (interessi sui mutui)</td><td>-12.149</td></tr>
+          <tr><td>Imposte</td><td>-5.652</td></tr>
+          <tr class="tot"><td>= Utile netto</td><td class="pos">13.627</td></tr>
+        </tbody>
+      </table>
+      <p class="muted">I ricavi della holding sono in larga parte "interni" al gruppo (affitti e servizi alle controllate): non nuovi soldi dall'esterno, ma redistribuzione tra le società del gruppo.</p>
+      <h3>Di cosa è fatto l'attivo</h3>
+      <div class="chart-box"><div class="chart-holder"><canvas id="cAttivo"></canvas></div>
+        <div class="cap">Quasi tutto l'attivo è "mattone": gli immobili. La cassa è zero e non compare.</div></div>
+      <ul>
+        <li><strong>Patrimonio immobiliare:</strong> ~€ 580 mila di uffici, finanziati in gran parte dai mutui (€ 425 mila).</li>
+        <li><strong>Cassa a zero</strong> e debiti a breve elevati: tensione finanziaria, dettagliata nella sezione 7.</li>
+        <li><strong>Indebitamento</strong> totale ~3,3× il patrimonio netto: gestibile per chi possiede immobili, ma non trascurabile.</li>
+      </ul>
+    </section>
+
+    <!-- 5 -->
+    <section id="controllate">
+      <h2 class="sec"><span class="num">5</span> Le due controllate a confronto</h2>
+      <table>
+        <thead><tr><th></th><th>Lizard S.r.l.</th><th>Nextai S.r.l.</th></tr></thead>
+        <tbody>
+          <tr><td>Quota posseduta da 051</td><td>100%</td><td>100%</td></tr>
+          <tr><td>Capitale sociale</td><td>12.000</td><td>10.000</td></tr>
+          <tr><td>Patrimonio netto</td><td>252.962</td><td>82.065</td></tr>
+          <tr><td>Risultato d'esercizio 2025</td><td class="pos">+67.692</td><td class="neg">-28.453</td></tr>
+        </tbody>
+      </table>
+      <div class="chart-box"><div class="chart-holder"><canvas id="cContributo"></canvas></div>
+        <div class="cap">Lizard traina, la holding aggiunge un piccolo utile, Nextai sottrae. Somma "grezza" ≈ +€ 53 mila (al lordo delle elisioni di gruppo).</div></div>
+      <p><strong>Lizard</strong> genera valore (utile in crescita, patrimonio solido). <strong>Nextai</strong> è in perdita (−28 mila), che ha eroso ~un quinto del suo patrimonio: profilo da start-up in investimento, oggi un costo da tenere d'occhio.</p>
+    </section>
+
+    <!-- 6 -->
+    <section id="organico">
+      <h2 class="sec"><span class="num">6</span> Organico e stipendi</h2>
+      <p>Dati INPS (trimestrali 2025) e costo del personale dal bilancio Lizard.</p>
+      <table>
+        <thead><tr><th>Organico 2025</th><th>1° tr.</th><th>2° tr.</th><th>3° tr.</th><th>4° tr.</th><th>Media</th></tr></thead>
+        <tbody>
+          <tr><td>Lizard — dipendenti</td><td>10</td><td>9</td><td>7</td><td>7</td><td>8</td></tr>
+          <tr><td>Lizard — collaboratori</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+          <tr><td>Holding 051 — dipendenti</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+          <tr class="tot"><td>Totale dipendenti gruppo</td><td>11</td><td>10</td><td>8</td><td>8</td><td>9</td></tr>
+        </tbody>
+      </table>
+      <div class="chart-box"><div class="chart-holder"><canvas id="cOrganico"></canvas></div>
+        <div class="cap">Organico in calo nel 2025: Lizard da 10 a 7 dipendenti.</div></div>
+      <ul>
+        <li><strong>Organico in calo (−3 a Lizard).</strong> In parte è un travaso: con la scissione 1 dipendente è passato alla holding (che mostra 1 addetto tutto l'anno). Al netto, riduzione operativa ~2 persone.</li>
+        <li><strong>Meno persone, più ricavi:</strong> il ritorno all'utile arriva anche da un recupero di efficienza / contenimento del costo del lavoro.</li>
+      </ul>
+
+      <h3>Quanto è pagato il personale</h3>
+      <div class="chart-box"><div class="chart-holder"><canvas id="cPersonale"></canvas></div>
+        <div class="cap">Costo del personale di Lizard −34% (560 → 383 mila) a fronte di organico 11 → 7.</div></div>
+      <table>
+        <thead><tr><th>Costo del personale — Lizard</th><th>2025</th><th>2024</th></tr></thead>
+        <tbody>
+          <tr><td>Salari e stipendi (lordo)</td><td>274.914</td><td>418.232</td></tr>
+          <tr><td>Oneri sociali</td><td>86.701</td><td>115.129</td></tr>
+          <tr><td>TFR</td><td>21.129</td><td>26.995</td></tr>
+          <tr class="tot"><td>Totale costo del personale</td><td>382.744</td><td>560.356</td></tr>
+          <tr><td>Organico medio (n.)</td><td>~8</td><td>~11</td></tr>
+          <tr><td>RAL media per dipendente</td><td>~34.000</td><td>~38.000</td></tr>
+          <tr><td>Costo pieno medio per dipendente</td><td>~47.800</td><td>~51.000</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li><strong>Retribuzioni medie:</strong> ~€ 34.000 lordi/anno (RAL), <strong>costo pieno ~€ 47.800</strong>; netto in busta stimato ~€ 22–24 mila. Valori medi tra ruoli diversi, solo orientativi.</li>
+        <li><strong>A parte:</strong> l'amministratore unico riceve da Lizard un <strong>compenso di € 100.000</strong> (nella holding 051 nessun compenso). Revisore legale: € 4.160 (→ € 14.000 per il triennio 2026–2028).</li>
+      </ul>
+    </section>
+
+    <!-- 7 -->
+    <section id="creditidebiti">
+      <h2 class="sec"><span class="num">7</span> Crediti e debiti</h2>
+      <p class="muted">Disponibili i bilanci completi di Lizard e della holding 051; per Nextai solo dati di sintesi.</p>
+
+      <h3>7.1 · Lizard: il vero circolante del gruppo</h3>
+      <div class="chart-box"><div class="chart-holder"><canvas id="cLizardCD"></canvas></div>
+        <div class="cap">Crediti e magazzino coprono ampiamente i debiti verso fornitori: circolante positivo.</div></div>
+      <ul>
+        <li><strong>Crediti v/clienti € 1.630.214</strong> (da 1.272.311): ~140 giorni di fatturato, lunghi ma fisiologici nell'ingrosso.</li>
+        <li><strong>Debiti v/fornitori € 1.484.335</strong> (da 972.497): l'aumento accompagna la ripresa dei volumi.</li>
+        <li><strong>Debito bancario quasi azzerato</strong> (da 807.463 a 105.890): i mutui sono passati a 051; resta solo lo scoperto di c/c. Nessun debito garantito da beni.</li>
+      </ul>
+
+      <h3>7.2 · I debiti della holding</h3>
+      <div class="chart-box"><div class="chart-holder"><canvas id="cDebNatura"></canvas></div>
+        <div class="cap">Totale € 522.619: oltre l'80% è debito bancario.</div></div>
+      <div class="chart-box"><div class="chart-holder"><canvas id="cDebScad"></canvas></div>
+        <div class="cap">Il 69% scade entro 12 mesi; solo € 39.875 è garantito da ipoteca, il resto è chirografario.</div></div>
+      <ul>
+        <li><strong>Molto debito a breve</strong> (€ 359 mila, 69%) perché in prevalenza <strong>chirografario</strong> (non garantito), tipicamente a breve durata.</li>
+        <li><strong>Opportunità nascosta:</strong> immobili per ~€ 580 mila ma ipotecati per &lt; € 40 mila → ampio patrimonio "libero" da offrire in garanzia per rinegoziare il debito a breve in un mutuo a lungo termine.</li>
+      </ul>
+
+      <h3>7.3 · La tenuta finanziaria a breve</h3>
+      <div class="chart-box"><div class="chart-holder"><canvas id="cLiquidita"></canvas></div>
+        <div class="cap">Risorse a breve (€ 73 mila) vs impegni a breve (€ 369 mila): scoperto ≈ −296 mila.</div></div>
+      <p>È il punto più delicato. Va però letto con equilibrio: parte degli impegni a breve è <strong>verso la stessa Lizard</strong> (€ 73.515), che è anche principale debitrice della holding (le posizioni quasi si compensano), e Lizard è in utile con riserve: può sostenere la capogruppo con dividendi e cassa. Il rischio non è insolvenza, ma <strong>dipendenza dai flussi delle controllate e dal rinnovo dei prestiti bancari</strong>.</p>
+      <table>
+        <thead><tr><th>Posizione infragruppo</th><th>Importo</th><th>Natura</th></tr></thead>
+        <tbody>
+          <tr><td>Holding 051 <strong>deve</strong> a Lizard</td><td>73.515</td><td style="text-align:left">Conguaglio scissione + rate mutui anticipate</td></tr>
+          <tr><td>Holding 051 <strong>vanta</strong> v/controllate</td><td>~72.941</td><td style="text-align:left">Affitti e servizi (in prevalenza infragruppo)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 8 -->
+    <section id="giudizio">
+      <h2 class="sec"><span class="num">8</span> Giudizio obiettivo</h2>
+      <p class="muted">Analisi imparziale con doppio focus: solidità finanziaria dell'azienda e valutazione dell'opportunità lavorativa. Non è un parere professionale di revisione o consulenza del lavoro.</p>
+
+      <!-- KPI per il candidato -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:12px;margin:18px 0">
+        <div class="card" style="padding:14px 16px;text-align:center;border-top:3px solid var(--green)">
+          <div style="font-size:1.5rem;font-weight:800;color:var(--green)">21 anni</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px">Storia operativa<br><em>Fondata feb. 2004, mai fallita</em></div>
+        </div>
+        <div class="card" style="padding:14px 16px;text-align:center;border-top:3px solid var(--amber)">
+          <div style="font-size:1.5rem;font-weight:800;color:var(--amber)">7</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px">Dipendenti Lizard<br><em>Team molto piccolo</em></div>
+        </div>
+        <div class="card" style="padding:14px 16px;text-align:center;border-top:3px solid var(--red)">
+          <div style="font-size:1.5rem;font-weight:800;color:var(--red)">−36%</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px">Organico 2024→2025<br><em>−4 persone in 18 mesi</em></div>
+        </div>
+        <div class="card" style="padding:14px 16px;text-align:center;border-top:3px solid var(--amber)">
+          <div style="font-size:1.5rem;font-weight:800;color:var(--amber)">€39.273</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px">RAL media stimata<br><em>Lordo annuo medio dipendenti</em></div>
+        </div>
+        <div class="card" style="padding:14px 16px;text-align:center;border-top:3px solid var(--blue)">
+          <div style="font-size:1.5rem;font-weight:800;color:var(--navy)">€600k</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px">Ricavi per addetto<br><em>Vs €301k nel 2024 (+99%)</em></div>
+        </div>
+        <div class="card" style="padding:14px 16px;text-align:center;border-top:3px solid var(--amber)">
+          <div style="font-size:1.5rem;font-weight:800;color:var(--amber)">2,2%</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px">EBIT margin<br><em>Margine operativo sottile</em></div>
+        </div>
+      </div>
+
+      <!-- Pannelli pro/contro lavorativi -->
+      <div class="cols2" style="margin-top:8px">
+        <div class="panel good">
+          <h4>Segnali positivi per chi vuole lavorare qui</h4>
+          <ul>
+            <li><strong>Azienda longeva e mai fallita:</strong> 21 anni di operatività continua, con capacità dimostrata di superare crisi (2024: −204k → 2025: +68k)</li>
+            <li><strong>Rating di legalità e revisore legale:</strong> segnali di governance trasparente — si rispettano le regole</li>
+            <li><strong>Nicchia specializzata:</strong> commercio B2B di apparecchiature elettroniche e telecomunicazioni — competenze difficili da replicare, potenziale CV spendibile nel settore</li>
+            <li><strong>Accesso diretto alla direzione:</strong> con 7 persone, il rapporto con il titolare è diretto — nessuna burocrazia, decisioni rapide</li>
+            <li><strong>Ricavi in forte crescita (+27%):</strong> il 2025 è stato un anno di espansione commerciale reale</li>
+            <li><strong>Trento, stabile:</strong> sede unica e non soggetta a trasferimenti — adatta a chi cerca radicamento geografico</li>
+            <li><strong>Produttività elevatissima:</strong> €600k di ricavi per persona — un contesto operativo ad alta intensità dove si impara a gestire molto</li>
+          </ul>
+        </div>
+        <div class="panel warn">
+          <h4>Segnali di cautela per chi valuta l'opportunità</h4>
+          <ul>
+            <li><strong>Tagli rapidi quando le cose vanno male:</strong> 4 persone eliminate in 18 mesi (2024–25), pari al 36% dell'organico — il precedente è chiaro</li>
+            <li><strong>Retribuzioni sotto la media di settore:</strong> RAL media stimata ~€39.000 lordi; il titolare percepisce €100.000 (2,5× la media dipendenti) — lo spazio per aumenti è strutturalmente limitato dai margini sottili</li>
+            <li><strong>Margini quasi nulli = zero sicurezza sui bonus:</strong> EBIT al 2,2% non lascia spazio per componenti variabili o premi significativi; un anno negativo cancella qualsiasi extra</li>
+            <li><strong>Un solo decisore per tutto:</strong> Massimiliano Vece è amministratore unico di Lizard e 051, e la fonte commerciale primaria — rischio "uomo chiave" assoluto per chi ci lavora</li>
+            <li><strong>Organico ridottissimo (7 pers.):</strong> nessuna ridondanza, ruoli probabilmente sovrapposti, pressione alta su ogni singola persona</li>
+            <li><strong>Nextai in perdita:</strong> il gruppo ha una controllata che drena risorse — potenziale fonte di ulteriore ristrutturazione</li>
+            <li><strong>Poca mobilità interna:</strong> struttura piatta senza livelli gerarchici — possibilità di avanzamento di carriera molto limitate</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Analisi per il candidato -->
+      <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card">
+          <h4 style="margin-top:0;color:var(--navy)">Cosa significa la salute finanziaria per te come dipendente</h4>
+          <p style="font-size:.88rem;line-height:1.65">L'azienda <strong>paga regolarmente</strong> — i debiti verso istituti previdenziali e dipendenti (22.843 €) sono tutti entro 12 mesi e in linea con le dimensioni. Non ci sono segnali di ritardi retributivi. Il <strong>fido bancario attivo</strong> (105.890 € verso banche) garantisce la liquidità operativa a breve. Il rischio non è quello di non ricevere lo stipendio del mese — è quello di un <strong>anno commercialmente negativo che provoca un nuovo ciclo di tagli</strong>. Il break-even dell'azienda è a circa €4,26 mln di valore della produzione: i ricavi 2025 (€4,28 mln) ci sono appena sopra. Un calo del 3–4% nei ricavi riporta in perdita.</p>
+        </div>
+        <div class="card">
+          <h4 style="margin-top:0;color:var(--navy)">Retribuzione: cosa aspettarsi e come negoziarla</h4>
+          <p style="font-size:.88rem;line-height:1.65">La RAL media stimata è <strong>~€39.000 lordi/anno</strong> (dati XBRL: salari €274.914 / 7 persone), ma la distribuzione interna è ignota — qualcuno può guadagnare molto di più, qualcuno di meno. Trattandosi di un'azienda con margini al 2,2%, la <strong>negoziazione iniziale è l'unica leva reale</strong>: aumenti futuri dipenderanno dalla performance aziendale complessiva, che storicamente è volatile. Per ruoli commerciali/tecnici nel settore elettronico a Trento, il mercato vale €32–48k. Chiedere nella forchetta alta e negoziare eventuale RAL variabile ancorata ai ricavi (non all'utile, troppo esposto ai costi fissi) è la strategia più razionale.</p>
+        </div>
+      </div>
+
+      <!-- Checklist colloquio -->
+      <div class="card" style="margin-top:16px;border-left:4px solid var(--amber)">
+        <h3 style="margin-top:0;color:var(--amber)">Domande da porre prima di accettare</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">
+          <ul style="font-size:.88rem;line-height:1.8;margin:8px 0">
+            <li><strong>La ristrutturazione organizzativa è conclusa?</strong> Ci sono ulteriori riduzioni pianificate?</li>
+            <li><strong>Qual è il piano per Nextai?</strong> Il gruppo intende chiuderla, rilanciarla o venderla?</li>
+            <li><strong>Chi si occupa di [funzione specifica]?</strong> Ruoli ibridi e sovrapposizioni in team da 7 persone sono la norma, non l'eccezione.</li>
+            <li><strong>C'è un piano di successione o delega?</strong> Cosa succederebbe se Vece fosse impossibilitato a lavorare per un periodo?</li>
+          </ul>
+          <ul style="font-size:.88rem;line-height:1.8;margin:8px 0">
+            <li><strong>Qual è la struttura del portafoglio clienti?</strong> Dipendenza da pochi grandi clienti = rischio occupazionale concentrato.</li>
+            <li><strong>Esistono premi o MBO?</strong> Se sì, su quali metriche sono calcolati e qual è lo storico pagato?</li>
+            <li><strong>Qual è il motivo della posizione aperta?</strong> Nuova funzione (segnale di crescita) o rimpiazzo (capire perché il precedente è uscito).</li>
+            <li><strong>Qual è l'obiettivo di ricavi per il 2026?</strong> Capire se c'è visibilità commerciale o se si vive trimestre per trimestre.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Verdetto finale -->
+      <div class="card" style="margin-top:16px;border-left:4px solid var(--navy)">
+        <h3 style="margin-top:0">Verdetto: per chi è questa opportunità</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
+          <div style="background:#f0f7f0;border-radius:10px;padding:14px 16px;border:1px solid #cfe6cf">
+            <div style="font-weight:700;color:var(--green);margin-bottom:8px">✓ È una buona scelta se…</div>
+            <ul style="font-size:.87rem;line-height:1.7;margin:0;padding-left:16px">
+              <li>Hai esperienza nel settore elettronico/telecomunicazioni B2B e vuoi un ruolo stabile a Trento</li>
+              <li>Preferisci un ambiente piccolo con accesso diretto al titolare e autonomia operativa</li>
+              <li>Cerchi solidità e continuità, non crescita verticale rapida</li>
+              <li>Sei nella forchetta retributiva €32–45k e la posizione ti consente di negoziare al top</li>
+              <li>Il 2025 è andato bene e vuoi entrare su un'onda positiva con la struttura già snellita</li>
+            </ul>
+          </div>
+          <div style="background:#fdf3f3;border-radius:10px;padding:14px 16px;border:1px solid #e8c4c4">
+            <div style="font-weight:700;color:var(--red);margin-bottom:8px">✗ È rischiosa se…</div>
+            <ul style="font-size:.87rem;line-height:1.7;margin:0;padding-left:16px">
+              <li>Hai bisogno di stabilità economica assoluta: un anno negativo può portare a tagli rapidi (precedente 2024)</li>
+              <li>Cerchi progressione gerarchica — con 7 persone non esiste una "carriera" tradizionale</li>
+              <li>Ti aspetti un bonus significativo: i margini al 2,2% non lo consentono strutturalmente</li>
+              <li>La dipendenza da un unico titolare-gestore ti crea disagio: qui tutto passa da una sola persona</li>
+              <li>Vuoi lavorare in un contesto con peer di pari livello, confronto interno e mobilità geografica</li>
+            </ul>
+          </div>
+        </div>
+        <p style="margin-top:16px;font-size:.92rem"><strong>In sintesi:</strong> Lizard è un'azienda solida nella sua nicchia, che ha dimostrato resilienza e sta attraversando un momento positivo. Ma è <em>strutturalmente piccola e fragile ai margini</em>. L'opportunità è reale per chi sa valorizzare la specializzazione e non dipende dalla sicurezza economica di un grande gruppo. <strong>Negoziare bene da subito è fondamentale</strong>: la struttura finanziaria non lascia spazio per riallineamenti salariali successivi. Chi entra con la RAL giusta e obiettivi chiari può trovare un ambiente diretto, competente e stabile nel medio periodo. Chi entra sperando in una crescita rapida rischia di essere deluso.</p>
+      </div>
+    </section>
+
+
+    <section id="appA">
+      <h2 class="sec"><span class="num">A</span> Appendice A — Lizard S.r.l.: bilancio ufficiale XBRL</h2>
+      <p class="muted">Dati estratti direttamente dal file XBRL depositato alla CCIAA di Trento (doc. T655562645). Fonte primaria — nessuna elaborazione dell'analista. Valori in euro.</p>
+
+      <h3 style="color:var(--navy);margin:24px 0 6px">Stato Patrimoniale</h3>
+      <div class="cols2">
+        <div>
+          <table>
+            <thead><tr><th>ATTIVO</th><th>31/12/2025</th><th>31/12/2024</th></tr></thead>
+            <tbody>
+              <tr><td style="padding-left:24px">Immobilizzazioni immateriali (nette)</td><td>20.508</td><td>27.344</td></tr>
+              <tr><td style="padding-left:24px">Immobilizzazioni materiali (nette)</td><td>67.507</td><td>726.076</td></tr>
+              <tr><td style="padding-left:24px">Immobilizzazioni finanziarie</td><td>2.010</td><td>2.010</td></tr>
+              <tr class="tot"><td>Totale immobilizzazioni</td><td>90.025</td><td>755.430</td></tr>
+              <tr><td style="padding-left:24px">Rimanenze merci</td><td>198.003</td><td>269.385</td></tr>
+              <tr><td style="padding-left:24px">Crediti verso clienti</td><td>1.630.214</td><td>1.272.311</td></tr>
+              <tr><td style="padding-left:24px">Crediti tributari</td><td>35.348</td><td>46.204</td></tr>
+              <tr><td style="padding-left:24px">Imposte anticipate</td><td>12.158</td><td>—</td></tr>
+              <tr><td style="padding-left:24px">Crediti verso altri</td><td>73.667</td><td>75</td></tr>
+              <tr><td style="padding-left:24px">Disponibilità liquide</td><td>—</td><td>—</td></tr>
+              <tr class="tot"><td>Totale attivo circolante</td><td>1.949.390</td><td>1.587.974</td></tr>
+              <tr><td>Ratei e risconti attivi</td><td>35.601</td><td>71.835</td></tr>
+              <tr class="tot" style="border-top:2px solid var(--navy)"><td><strong>TOTALE ATTIVO</strong></td><td><strong>2.075.016</strong></td><td><strong>2.415.239</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <table>
+            <thead><tr><th>PASSIVO</th><th>31/12/2025</th><th>31/12/2024</th></tr></thead>
+            <tbody>
+              <tr><td style="padding-left:24px">Capitale sociale</td><td>12.000</td><td>12.000</td></tr>
+              <tr><td style="padding-left:24px">Riserva legale</td><td>32.494</td><td>32.494</td></tr>
+              <tr><td style="padding-left:24px">Altre riserve</td><td>140.776</td><td>470.092</td></tr>
+              <tr><td style="padding-left:24px">Utile (perdita) d'esercizio</td><td class="pos">67.692</td><td class="neg">(204.138)</td></tr>
+              <tr class="tot"><td>Totale patrimonio netto</td><td>252.962</td><td>310.448</td></tr>
+              <tr><td>Fondi rischi e oneri</td><td>20.000</td><td>—</td></tr>
+              <tr><td>Tratt. fine rapporto (TFR)</td><td>70.972</td><td>101.682</td></tr>
+              <tr><td style="padding-left:24px">Debiti verso banche</td><td>105.890</td><td>807.463</td></tr>
+              <tr><td style="padding-left:24px">Debiti verso altri finanziatori</td><td>6.833</td><td>4.890</td></tr>
+              <tr><td style="padding-left:24px">Debiti verso fornitori</td><td>1.484.335</td><td>972.497</td></tr>
+              <tr><td style="padding-left:24px">Debiti tributari</td><td>14.303</td><td>22.726</td></tr>
+              <tr><td style="padding-left:24px">Debiti ist. prev. e sic. soc.</td><td>22.843</td><td>25.754</td></tr>
+              <tr><td style="padding-left:24px">Altri debiti</td><td>44.487</td><td>56.095</td></tr>
+              <tr class="tot"><td>Totale debiti</td><td>1.678.691</td><td>1.889.425</td></tr>
+              <tr><td>Ratei e risconti passivi</td><td>52.390</td><td>113.684</td></tr>
+              <tr class="tot" style="border-top:2px solid var(--navy)"><td><strong>TOTALE PASSIVO</strong></td><td><strong>2.075.016</strong></td><td><strong>2.415.239</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3 style="color:var(--navy);margin:24px 0 6px">Conto Economico</h3>
+      <table>
+        <thead><tr><th>Voce</th><th>2025</th><th>2024</th></tr></thead>
+        <tbody>
+          <tr><td style="padding-left:24px">Ricavi vendite e prestazioni</td><td>4.203.850</td><td>3.315.228</td></tr>
+          <tr><td style="padding-left:24px">Altri ricavi e proventi</td><td>75.359</td><td>58.720</td></tr>
+          <tr class="tot"><td>A — Totale valore della produzione</td><td>4.279.209</td><td>3.373.948</td></tr>
+          <tr><td style="padding-left:24px">Variaz. rimanenze mat. e merci</td><td>71.382</td><td>320.811</td></tr>
+          <tr><td style="padding-left:24px">Costi del personale</td><td>382.744</td><td>560.356</td></tr>
+          <tr><td style="padding-left:24px">Ammortamenti e svalutazioni</td><td>28.701</td><td>60.636</td></tr>
+          <tr class="tot"><td>B — Totale costi della produzione</td><td>4.185.201</td><td>3.539.664</td></tr>
+          <tr class="tot"><td><strong>Differenza A − B</strong></td><td class="pos"><strong>94.008</strong></td><td class="neg"><strong>(165.716)</strong></td></tr>
+          <tr><td>Proventi e oneri finanziari (netti)</td><td class="neg">(24.092)</td><td class="neg">(38.086)</td></tr>
+          <tr><td>Imposte sul reddito d'esercizio</td><td class="neg">(2.224)</td><td class="neg">(336)</td></tr>
+          <tr class="tot" style="border-top:2px solid var(--navy)"><td><strong>Utile (perdita) d'esercizio</strong></td><td class="pos"><strong>67.692</strong></td><td class="neg"><strong>(204.138)</strong></td></tr>
+        </tbody>
+      </table>
+      <p class="muted" style="font-size:.8rem;margin-top:6px">¹ TFR: valore derivato (Totale Passivo meno PN, Fondi, Debiti, Ratei/Risconti) — non disponibile come tag XBRL esplicito nel formato abbreviato. Tutti gli altri valori sono tag XBRL diretti.</p>
+    </section>
+
+    <section id="appB">
+      <h2 class="sec"><span class="num">B</span> Appendice B — 051 S.r.l.: bilancio ufficiale XBRL</h2>
+      <p class="muted">Dati estratti direttamente dal file XBRL depositato alla CCIAA di Trento (doc. T655582679). Primo esercizio: <strong>07/03/2025 – 31/12/2025</strong> (costituita per scissione parziale da Lizard). Non esiste esercizio precedente. Valori in euro.</p>
+
+      <h3 style="color:var(--navy);margin:24px 0 6px">Stato Patrimoniale al 31/12/2025</h3>
+      <div class="cols2">
+        <div>
+          <table>
+            <thead><tr><th>ATTIVO</th><th>31/12/2025</th></tr></thead>
+            <tbody>
+              <tr><td style="padding-left:24px">Immobilizzazioni materiali (nette)</td><td>613.412</td></tr>
+              <tr><td style="padding-left:24px">Immobilizzazioni finanziarie (partecipazioni)</td><td>22.000</td></tr>
+              <tr class="tot"><td>Totale immobilizzazioni</td><td>635.412</td></tr>
+              <tr><td style="padding-left:24px">Crediti verso clienti</td><td>72.941</td></tr>
+              <tr class="tot"><td>Totale attivo circolante</td><td>72.941</td></tr>
+              <tr><td>Ratei e risconti attivi</td><td>54</td></tr>
+              <tr class="tot" style="border-top:2px solid var(--navy)"><td><strong>TOTALE ATTIVO</strong></td><td><strong>708.407</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <table>
+            <thead><tr><th>PASSIVO</th><th>31/12/2025</th></tr></thead>
+            <tbody>
+              <tr><td style="padding-left:24px">Capitale sociale</td><td>32.000</td></tr>
+              <tr><td style="padding-left:24px">Riserva straordinaria (da scissione)</td><td>115.178</td></tr>
+              <tr><td style="padding-left:24px">Utile d'esercizio</td><td class="pos">13.627</td></tr>
+              <tr class="tot"><td>Totale patrimonio netto</td><td>160.805</td></tr>
+              <tr><td>Tratt. fine rapporto (TFR)</td><td>14.394</td></tr>
+              <tr><td style="padding-left:24px">Debiti verso banche (mutui)</td><td>424.631</td></tr>
+              <tr><td style="padding-left:24px">— di cui entro 12 mesi</td><td>260.855</td></tr>
+              <tr><td style="padding-left:24px">— di cui oltre 12 mesi</td><td>163.776</td></tr>
+              <tr><td style="padding-left:24px">Debiti verso imprese controllate</td><td>73.515</td></tr>
+              <tr><td style="padding-left:24px">Debiti verso fornitori</td><td>1.641</td></tr>
+              <tr><td style="padding-left:24px">Debiti tributari</td><td>15.043</td></tr>
+              <tr><td style="padding-left:24px">Debiti ist. prev. e sic. soc.</td><td>1.584</td></tr>
+              <tr><td style="padding-left:24px">Altri debiti</td><td>6.204</td></tr>
+              <tr class="tot"><td>Totale debiti</td><td>522.619</td></tr>
+              <tr><td>Ratei e risconti passivi</td><td>10.589</td></tr>
+              <tr class="tot" style="border-top:2px solid var(--navy)"><td><strong>TOTALE PASSIVO</strong></td><td><strong>708.407</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3 style="color:var(--navy);margin:24px 0 6px">Conto Economico (07/03/2025 – 31/12/2025)</h3>
+      <table>
+        <thead><tr><th>Voce</th><th>2025 (primo esercizio)</th></tr></thead>
+        <tbody>
+          <tr><td style="padding-left:24px">Ricavi vendite e prestazioni (canoni di locazione)</td><td>126.926</td></tr>
+          <tr><td style="padding-left:24px">Altri ricavi e proventi</td><td>2</td></tr>
+          <tr class="tot"><td>A — Totale valore della produzione</td><td>126.928</td></tr>
+          <tr><td style="padding-left:24px">Costi del personale</td><td>42.755</td></tr>
+          <tr><td style="padding-left:24px">Ammortamenti</td><td>29.715</td></tr>
+          <tr class="tot"><td>B — Totale costi della produzione</td><td>95.500</td></tr>
+          <tr class="tot"><td><strong>Differenza A − B</strong></td><td class="pos"><strong>31.428</strong></td></tr>
+          <tr><td>Oneri finanziari (interessi su mutui)</td><td class="neg">(12.149)</td></tr>
+          <tr><td>Imposte sul reddito d'esercizio</td><td class="neg">(5.652)</td></tr>
+          <tr class="tot" style="border-top:2px solid var(--navy)"><td><strong>Utile d'esercizio</strong></td><td class="pos"><strong>13.627</strong></td></tr>
+        </tbody>
+      </table>
+      <p class="muted" style="font-size:.8rem;margin-top:6px">I debiti verso banche (424.631 €) sono i mutui ipotecari trasferiti da Lizard a seguito della scissione parziale. I debiti verso imprese controllate (73.515 €) rappresentano un debito infragruppo verso Lizard che aveva anticipato il pagamento delle rate mutuo durante il periodo transitorio.</p>
+    </section>
+
+    <section id="appC">
+      <h2 class="sec"><span class="num">C</span> Appendice C — Sedi operative: attive e cessate</h2>
+      <p class="muted">Dati estratti dai fascicoli storici CCIAA di Trento (Lizard: doc. T655562645; 051: doc. T655582679) e dalla CCIAA di Milano Monza Brianza Lodi. Include tutte le sedi legali storiche e le unità locali con relative date di apertura e cessazione.</p>
+
+      <!-- LIZARD -->
+      <h3 style="color:var(--navy);margin:24px 0 8px">Lizard S.r.l. — CF 01867040220</h3>
+
+      <h4 style="color:var(--muted);font-weight:600;margin:14px 0 4px;font-size:.9rem;text-transform:uppercase;letter-spacing:.05em">Sede legale — cronologia</h4>
+      <table>
+        <thead><tr><th>Indirizzo</th><th>Comune</th><th>CAP</th><th>Data inizio</th><th>Data fine</th><th>Stato</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Via dei Cappuccini 9</td><td>Trento (TN)</td><td>38121</td>
+            <td>12/02/2004</td><td>28/04/2004</td>
+            <td><span style="color:var(--muted);font-size:.82rem">● Cessata</span></td>
+          </tr>
+          <tr>
+            <td>Via dell'Asilo 22 <small style="color:var(--muted)">(fraz. Roncafort)</small></td><td>Trento (TN)</td><td>38121</td>
+            <td>28/04/2004</td><td>16/09/2014</td>
+            <td><span style="color:var(--muted);font-size:.82rem">● Cessata</span></td>
+          </tr>
+          <tr>
+            <td>Via del Commercio 5-5A</td><td>Trento (TN)</td><td>38121</td>
+            <td>16/09/2014</td><td>01/09/2020</td>
+            <td><span style="color:var(--muted);font-size:.82rem">● Cessata</span></td>
+          </tr>
+          <tr>
+            <td><strong>Via A. Detassis 23A</strong></td><td><strong>Trento (TN)</strong></td><td><strong>38121</strong></td>
+            <td><strong>01/09/2020</strong></td><td>—</td>
+            <td><span style="color:var(--green);font-weight:700;font-size:.82rem">● Attiva</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h4 style="color:var(--muted);font-weight:600;margin:20px 0 4px;font-size:.9rem;text-transform:uppercase;letter-spacing:.05em">Unità locali</h4>
+      <table>
+        <thead><tr><th>Tipo</th><th>Indirizzo</th><th>Comune</th><th>CAP</th><th>CCIAA</th><th>Data apertura</th><th>Data cessazione</th><th>Causale</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Ufficio / Sede amministrativa</td>
+            <td>Via del Commercio 3<br><small style="color:var(--muted)">→ rin. Via del Commercio 5-5A (ott. 2009)<br>→ trasf. Via dell'Asilo 22, Roncafort (set. 2014)</small></td>
+            <td>Trento (TN)</td><td>38121</td><td>Trento</td>
+            <td>28/04/2009</td><td>09/04/2015</td>
+            <td style="font-size:.82rem;color:var(--muted)">Chiusura</td>
+          </tr>
+          <tr>
+            <td>Ufficio</td>
+            <td>Via S. Maurizio al Lambro 1</td>
+            <td>Sesto San Giovanni (MI)</td><td>20099</td><td>Milano Monza<br>Brianza Lodi</td>
+            <td>01/10/2015</td><td>31/12/2015</td>
+            <td style="font-size:.82rem;color:var(--muted)">Chiusura<br><small>(aperta 3 mesi)</small></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="card" style="margin-top:12px;padding:14px 18px;font-size:.88rem">
+        <strong>Note geografiche — Lizard:</strong>
+        <ul style="margin:8px 0 0;padding-left:18px;line-height:1.7">
+          <li>Tutta la storia è concentrata a <strong>Trento</strong>: l'azienda non ha mai avuto sedi operative fuori provincia in modo continuativo.</li>
+          <li>L'ufficio di <strong>Sesto San Giovanni (MI)</strong>, aperto per soli 3 mesi nel 2015, rappresenta l'unico tentativo di espansione geografica al di fuori del Trentino — chiuso a fine anno.</li>
+          <li>La sede attuale (Via Detassis 23A) è condivisa con la holding 051 S.r.l., all'interno dello stesso edificio di proprietà trasferito alla holding con la scissione.</li>
+          <li>L'indirizzo residenziale dell'amministratore Massimiliano Vece (Via dei Cappuccini 9) corrisponde alla primissima sede legale del 2004.</li>
+        </ul>
+      </div>
+
+      <!-- 051 -->
+      <h3 style="color:var(--navy);margin:32px 0 8px">051 S.r.l. — CF 02789360225</h3>
+
+      <h4 style="color:var(--muted);font-weight:600;margin:14px 0 4px;font-size:.9rem;text-transform:uppercase;letter-spacing:.05em">Sede legale</h4>
+      <table>
+        <thead><tr><th>Indirizzo</th><th>Comune</th><th>CAP</th><th>Data iscrizione</th><th>Data fine</th><th>Stato</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Via Antonio Detassis 23/A</strong></td><td><strong>Trento (TN)</strong></td><td><strong>38121</strong></td>
+            <td><strong>07/03/2025</strong></td><td>—</td>
+            <td><span style="color:var(--green);font-weight:700;font-size:.82rem">● Attiva</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="muted" style="font-size:.85rem;margin-top:6px">Nessuna unità locale registrata (Unità locali: 0). La società è nata per scissione parziale da Lizard S.r.l. il 07/03/2025 e ha sede nell'immobile di Via Detassis che era già sede operativa di Lizard — ora di proprietà di 051 stessa.</p>
+
+      <div class="card" style="margin-top:12px;padding:14px 18px;font-size:.88rem">
+        <strong>Sintesi geografica del gruppo:</strong>
+        <ul style="margin:8px 0 0;padding-left:18px;line-height:1.7">
+          <li><strong>100% Trentino</strong>: entrambe le società attive hanno sede a Trento (TN), nello stesso indirizzo (Via Detassis 23A).</li>
+          <li>Il gruppo non ha presenze operative fuori regione al 17/06/2026.</li>
+          <li>Lizard ha esplorato in passato una presenza a Milano (2015), ma ha chiuso l'ufficio dopo tre mesi — nessun tentativo successivo di espansione geografica.</li>
+          <li>La concentrazione geografica è un fattore di rischio (dipendenza dal tessuto economico locale trentino) ma anche di forza (gestione semplice, zero costi di struttura decentrata).</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>
+      <strong>Nota metodologica</strong> — Fonti: fascicoli storici e bilanci abbreviati al 31/12/2025 di Lizard S.r.l. (doc. T655562645) e 051 S.r.l. (doc. T655582679), CCIAA di Trento, estrazione 17/06/2026. Per Lizard e holding 051 sono stati usati i bilanci integrali (stato patrimoniale, conto economico, nota integrativa); per Nextai solo i dati di sintesi della nota della holding. <strong>Tutte le voci di bilancio riportate sono state verificate confrontandole con i file XBRL ufficiali depositati</strong> (bilancio_655562645 per Lizard, bilancio_655582679 per 051): 59 valori controllati, nessuna discrepanza. Retribuzioni medie e indici sono stime/calcoli dell'analista. Documento informativo, non un parere professionale di revisione o rating.
+    </footer>
+  </main>
+</div>
+
+<script>
+const NAVY="#1f3a5f",BLUE="#2e6ca4",LBLUE="#7aa9d0",GREEN="#2e7d32",RED="#c0392b",AMBER="#b8860b",GREY="#8a97a5",LL="#c9d6e3";
+const euro=v=>"€ "+Math.round(v).toLocaleString("it-IT");
+const k=v=>(v/1000).toLocaleString("it-IT",{maximumFractionDigits:0})+"k";
+Chart.defaults.font.family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif";
+Chart.defaults.font.size=12;Chart.defaults.color="#44515f";
+const grid={color:"#eef2f6"};
+const moneyTick={callback:v=>k(v)};
+const tip=lbl=>({callbacks:{label:c=>(lbl?lbl+": ":"")+euro(c.raw)}});
+
+new Chart(cRicavi,{data:{labels:["2023","2024","2025"],datasets:[
+  {type:"bar",label:"Ricavi",data:[3886136,3315228,4203850],backgroundColor:BLUE,yAxisID:"y",borderRadius:4,order:2},
+  {type:"line",label:"Utile/Perdita",data:[34004,-204138,67692],borderColor:AMBER,backgroundColor:AMBER,borderWidth:3,pointRadius:5,yAxisID:"y1",order:1,tension:.2}
+]},options:{maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
+  plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>c.dataset.label+": "+euro(c.parsed.y)}}},
+  scales:{y:{position:"left",grid,ticks:moneyTick,title:{display:true,text:"Ricavi"}},
+    y1:{position:"right",grid:{drawOnChartArea:false},ticks:moneyTick,title:{display:true,text:"Utile/Perdita"}}}}});
+
+new Chart(cCosti,{type:"bar",data:{labels:["Acquisto merci","Servizi e godimento beni","Personale","Ammort. e altri"],
+  datasets:[{data:[3033589,607455,382744,161413],backgroundColor:[NAVY,BLUE,AMBER,LBLUE],borderRadius:4}]},
+  options:{maintainAspectRatio:false,indexAxis:"y",plugins:{legend:{display:false},tooltip:tip()},
+    scales:{x:{grid,ticks:moneyTick},y:{grid:{display:false}}}}});
+
+new Chart(cAttivo,{type:"doughnut",data:{labels:["Immobili e impianti","Crediti v/clienti","Partecipazioni","Altro"],
+  datasets:[{data:[613412,72941,22000,54],backgroundColor:[NAVY,BLUE,LBLUE,LL],borderColor:"#fff",borderWidth:2}]},
+  options:{maintainAspectRatio:false,cutout:"58%",plugins:{legend:{position:"right"},
+    tooltip:{callbacks:{label:c=>c.label+": "+euro(c.parsed)}}}}});
+
+new Chart(cContributo,{type:"bar",data:{labels:["Lizard","Holding 051","Nextai"],
+  datasets:[{data:[67692,13627,-28453],backgroundColor:[GREEN,GREEN,RED],borderRadius:4}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:tip()},
+    scales:{y:{grid,ticks:moneyTick},x:{grid:{display:false}}}}});
+
+new Chart(cOrganico,{type:"bar",data:{labels:["1° trim.","2° trim.","3° trim.","4° trim."],datasets:[
+  {label:"Lizard (dipendenti)",data:[10,9,7,7],backgroundColor:BLUE,borderRadius:3,stack:"s"},
+  {label:"Holding 051 (dipendenti)",data:[1,1,1,1],backgroundColor:AMBER,borderRadius:3,stack:"s"}
+]},options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom"}},
+  scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid,title:{display:true,text:"N. dipendenti"}}}}});
+
+new Chart(cPersonale,{data:{labels:["2024","2025"],datasets:[
+  {type:"bar",label:"Salari e stipendi",data:[418232,274914],backgroundColor:BLUE,stack:"s",yAxisID:"y"},
+  {type:"bar",label:"Oneri sociali",data:[115129,86701],backgroundColor:LBLUE,stack:"s",yAxisID:"y"},
+  {type:"bar",label:"TFR",data:[26995,21129],backgroundColor:LL,stack:"s",yAxisID:"y"},
+  {type:"line",label:"Organico (n.)",data:[11,7],borderColor:RED,backgroundColor:RED,borderWidth:3,pointRadius:5,yAxisID:"y1"}
+]},options:{maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
+  plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>c.dataset.label+": "+(c.dataset.yAxisID==="y1"?c.parsed.y:euro(c.parsed.y))}}},
+  scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,position:"left",grid,ticks:moneyTick,title:{display:true,text:"Costo personale"}},
+    y1:{position:"right",grid:{drawOnChartArea:false},min:0,max:14,title:{display:true,text:"Dipendenti"}}}}});
+
+new Chart(cLizardCD,{type:"bar",data:{labels:["Crediti v/clienti","Rimanenze (merci)","Debiti v/fornitori"],
+  datasets:[{data:[1630214,198003,1484335],backgroundColor:[GREEN,BLUE,RED],borderRadius:4}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:tip()},
+    scales:{y:{grid,ticks:moneyTick},x:{grid:{display:false}}}}});
+
+new Chart(cDebNatura,{type:"bar",data:{labels:["Banche (mutui)","Infragruppo (Lizard)","Operativi"],
+  datasets:[{data:[424631,73515,24472],backgroundColor:[NAVY,AMBER,LBLUE],borderRadius:4}]},
+  options:{maintainAspectRatio:false,indexAxis:"y",plugins:{legend:{display:false},tooltip:tip()},
+    scales:{x:{grid,ticks:moneyTick},y:{grid:{display:false}}}}});
+
+new Chart(cDebScad,{type:"bar",data:{labels:["Per scadenza","Per garanzia"],datasets:[
+  {label:"Entro 12 mesi / Ipotecario",data:[358843,39875],backgroundColor:RED,stack:"s",borderRadius:3},
+  {label:"Oltre 12 mesi / Chirografario",data:[163776,482744],backgroundColor:LBLUE,stack:"s",borderRadius:3}
+]},options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>c.dataset.label+": "+euro(c.parsed.y)}}},
+  scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid,ticks:moneyTick}}}});
+
+new Chart(cLiquidita,{type:"bar",data:{labels:["Risorse a breve","Impegni a breve"],
+  datasets:[{data:[72941,369432],backgroundColor:[GREEN,RED],borderRadius:4}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:tip()},
+    scales:{y:{grid,ticks:moneyTick},x:{grid:{display:false}}}}});
+
+// Scroll-spy + progress bar
+const links=[...document.querySelectorAll("#toc a")];
+const secs=links.map(a=>document.querySelector(a.getAttribute("href")));
+const prog=document.getElementById("progress");
+function onScroll(){
+  const st=window.scrollY,h=document.body.scrollHeight-window.innerHeight;
+  prog.style.width=(h>0?st/h*100:0)+"%";
+  let idx=0;
+  secs.forEach((s,i)=>{if(s&&s.getBoundingClientRect().top<=120)idx=i;});
+  links.forEach((a,i)=>a.classList.toggle("active",i===idx));
+}
+document.addEventListener("scroll",onScroll,{passive:true});onScroll();
+// password gate — SHA-256, no plaintext in source
+const HASH="39c26b9361309b1f11682ee3a77570a39fa0b52c4720004ed25184a63759fb7d";
+async function sha256(s){
+  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+async function checkGate(){
+  const val=document.getElementById("gateInput").value;
+  const h=await sha256(val);
+  if(h===HASH){
+    document.getElementById("gate").classList.add("hide");
+    sessionStorage.setItem("gateOk","1");
+  } else {
+    const err=document.getElementById("gateErr");
+    err.textContent="Password errata. Riprovare.";
+    document.getElementById("gateInput").value="";
+    document.getElementById("gateInput").focus();
+    setTimeout(()=>err.textContent="",2500);
+  }
+}
+document.getElementById("gateInput").addEventListener("keydown",e=>{
+  if(e.key==="Enter") checkGate();
+});
+// skip gate if already authenticated in this session
+if(sessionStorage.getItem("gateOk")==="1"){
+  document.getElementById("gate").classList.add("hide");
+}
+
+// hide loader once charts are rendered
+window.addEventListener("load", () => {
+  document.getElementById("loader").classList.add("hide");
+});
+
+</script>
+</body>
+</html>
