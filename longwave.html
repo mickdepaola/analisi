@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analisi · Longwave S.p.A.</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#1f3a5f; --blue:#2e6ca4; --lblue:#7aa9d0; --green:#2e7d32;
+    --red:#c0392b; --amber:#b8860b; --light:#eef3f8; --line:#d7e0ea;
+    --ink:#1c2733; --muted:#5d6b7a; --bg:#f5f7fa; --card:#ffffff;
+    --shadow:0 1px 3px rgba(20,40,70,.08),0 6px 24px rgba(20,40,70,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+  #progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--blue),var(--navy));z-index:100;transition:width .1s}
+  .wrap{display:grid;grid-template-columns:270px 1fr;max-width:1280px;margin:0 auto;gap:0}
+  aside{position:sticky;top:0;height:100vh;overflow-y:auto;padding:28px 20px;border-right:1px solid var(--line);background:#fff}
+  .brand{font-weight:800;color:var(--navy);font-size:1.05rem;line-height:1.25;margin-bottom:4px}
+  .brand small{display:block;font-weight:500;color:var(--muted);font-size:.78rem;margin-top:4px}
+  nav{margin-top:22px;display:flex;flex-direction:column;gap:2px}
+  nav a{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--muted);
+    padding:9px 12px;border-radius:8px;font-size:.9rem;font-weight:500;transition:.15s}
+  nav a .n{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;
+    border-radius:6px;background:var(--light);color:var(--navy);font-size:.72rem;font-weight:700;flex:0 0 auto}
+  nav a:hover{background:var(--light);color:var(--navy)}
+  nav a.active{background:var(--navy);color:#fff}
+  nav a.active .n{background:rgba(255,255,255,.2);color:#fff}
+  main{padding:40px 48px 80px;max-width:900px}
+  .hero h1{font-size:2rem;color:var(--navy);margin:0 0 6px;line-height:1.15;font-weight:800}
+  .hero .sub{color:var(--muted);font-size:1.05rem;margin:0}
+  .hero .meta{margin-top:14px;font-size:.82rem;color:var(--muted);background:#fff;border:1px solid var(--line);
+    border-radius:10px;padding:12px 16px}
+  section{padding-top:46px;margin-top:6px}
+  h2.sec{font-size:1.5rem;color:var(--navy);font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:12px}
+  h2.sec .num{font-size:.85rem;background:var(--navy);color:#fff;width:30px;height:30px;border-radius:9px;
+    display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+  h3{color:var(--blue);font-size:1.08rem;margin:26px 0 8px;font-weight:700}
+  p{margin:10px 0}
+  .lead{font-size:1.05rem}
+  .muted{color:var(--muted)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;box-shadow:var(--shadow);margin:16px 0}
+  .callout{border-left:4px solid var(--amber);background:#fbf6e9;border-radius:0 10px 10px 0;padding:12px 18px;margin:16px 0;font-size:.95rem}
+  .callout.info{border-color:var(--blue);background:#eef5fb}
+  .callout.good{border-color:var(--green);background:#f0f7f0}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow);text-align:center}
+  .kpi .v{font-size:1.5rem;font-weight:800;color:var(--navy);line-height:1.1}
+  .kpi .v.pos{color:var(--green)} .kpi .v.neg{color:var(--red)}
+  .kpi .l{font-size:.78rem;color:var(--muted);margin-top:6px}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.9rem;background:#fff;
+    border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  thead th{background:var(--navy);color:#fff;font-weight:600;text-align:right;padding:10px 14px}
+  thead th:first-child{text-align:left}
+  tbody td{padding:9px 14px;border-top:1px solid var(--line);text-align:right}
+  tbody td:first-child{text-align:left}
+  tbody tr:nth-child(even){background:#f7fafd}
+  tr.tot td{font-weight:700;background:var(--light)!important}
+  tr.sub td{font-size:.85rem;color:var(--muted)}
+  tr.sub td:first-child{padding-left:28px}
+  td.pos{color:var(--green);font-weight:600} td.neg{color:var(--red);font-weight:600}
+  .chart-box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px 10px;box-shadow:var(--shadow);margin:18px 0}
+  .chart-box .cap{font-size:.8rem;color:var(--muted);margin-top:10px}
+  .chart-holder{position:relative;height:300px}
+  .tree{display:flex;flex-direction:column;gap:0;margin:18px 0}
+  .node{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 18px;box-shadow:var(--shadow)}
+  .node.holding{border-left:5px solid var(--navy)}
+  .node .t{font-weight:800;color:var(--navy)} .node .d{font-size:.88rem;color:var(--muted);margin-top:3px}
+  .children{margin-left:34px;border-left:2px dashed var(--line);padding-left:24px;margin-top:0}
+  .children .node{margin-top:14px;border-left:5px solid var(--blue)}
+  .badge{display:inline-block;background:var(--light);color:var(--navy);font-size:.72rem;font-weight:700;
+    padding:2px 8px;border-radius:20px;margin-left:6px}
+  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+  .panel{border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+  .panel.good{background:#f0f7f0;border:1px solid #cfe6cf}
+  .panel.warn{background:#fbf6e9;border:1px solid #ecdfba}
+  .panel.risk{background:#fdf0f0;border:1px solid #e8c4c4}
+  .panel h4{margin:0 0 10px;font-size:1rem}
+  .panel.good h4{color:var(--green)} .panel.warn h4{color:var(--amber)} .panel.risk h4{color:var(--red)}
+  .panel ul{margin:0;padding-left:18px;font-size:.9rem}
+  .panel li{margin:6px 0}
+  .verdict{border-radius:16px;padding:28px 30px;margin:24px 0;box-shadow:var(--shadow)}
+  .verdict.go{background:linear-gradient(135deg,#f0f9f0,#e4f4e4);border:2px solid #4caf50}
+  .verdict.caution{background:linear-gradient(135deg,#fdf6e9,#faefd6);border:2px solid #e6a817}
+  .verdict h3{margin:0 0 10px;font-size:1.2rem}
+  .verdict.go h3{color:var(--green)} .verdict.caution h3{color:var(--amber)}
+  .checklist{list-style:none;margin:14px 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .checklist li{font-size:.88rem;display:flex;align-items:flex-start;gap:8px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 12px}
+  .checklist li .ic{flex:0 0 auto;font-size:1rem}
+  .geo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+  .geo-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+  .geo-card.active{border-left:4px solid var(--green)}
+  .geo-card.ceased{border-left:4px solid var(--muted);opacity:.75}
+  .geo-card .city{font-weight:700;color:var(--navy);font-size:.95rem}
+  .geo-card .addr{font-size:.8rem;color:var(--muted);margin-top:2px}
+  .geo-card .dates{font-size:.75rem;color:var(--muted);margin-top:6px}
+  .geo-card .tag{display:inline-block;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:10px;margin-top:6px}
+  .geo-card.active .tag{background:#e8f5e9;color:var(--green)}
+  .geo-card.ceased .tag{background:#f5f5f5;color:var(--muted)}
+  footer{border-top:1px solid var(--line);margin-top:50px;padding-top:18px;font-size:.78rem;color:var(--muted)}
+  @media(max-width:880px){
+    .wrap{grid-template-columns:1fr}
+    aside{position:static;height:auto;border-right:none;border-bottom:1px solid var(--line)}
+    nav{flex-direction:row;flex-wrap:wrap}
+    main{padding:28px 20px 60px}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .cols2{grid-template-columns:1fr}
+    .checklist{grid-template-columns:1fr}
+    .geo-grid{grid-template-columns:1fr 1fr}
+  }
+
+  /* ── loader ── */
+  #loader{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;z-index:9999;
+    transition:opacity .5s ease, visibility .5s ease}
+  #loader.hide{opacity:0;visibility:hidden}
+  .ld-logo{color:#fff;font-size:1.25rem;font-weight:800;letter-spacing:.04em;margin-bottom:28px;opacity:.9}
+  .ld-logo span{color:var(--lblue)}
+  .ld-ring{width:48px;height:48px;border:3px solid rgba(255,255,255,.15);
+    border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+  .ld-label{color:rgba(255,255,255,.5);font-size:.78rem;margin-top:18px;letter-spacing:.06em}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ── password gate ── */
+  #gate{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;
+    justify-content:center;z-index:10000;flex-direction:column;gap:0}
+  #gate.hide{display:none}
+  .gate-box{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+    border-radius:18px;padding:40px 44px;width:320px;text-align:center;
+    box-shadow:0 24px 64px rgba(0,0,0,.4)}
+  .gate-lock{font-size:2.2rem;margin-bottom:20px}
+  .gate-box input{width:100%;padding:11px 14px;border-radius:9px;border:1px solid rgba(255,255,255,.18);
+    background:rgba(255,255,255,.08);color:#fff;font-size:1rem;text-align:center;outline:none;
+    letter-spacing:.15em;margin-bottom:12px}
+  .gate-box input::placeholder{color:rgba(255,255,255,.35);letter-spacing:.04em}
+  .gate-box input:focus{border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.12)}
+  .gate-btn{width:100%;padding:11px;border-radius:9px;border:none;background:#fff;color:var(--navy);
+    font-size:.95rem;font-weight:700;cursor:pointer;transition:.15s}
+  .gate-btn:hover{background:var(--lblue);color:#fff}
+  .gate-err{color:#f87171;font-size:.82rem;margin-top:10px;min-height:18px}
+</style>
+</head>
+<body>
+
+<!-- Password gate -->
+<div id="gate">
+  <div class="gate-box">
+    <div class="gate-lock">🔒</div>
+    <input id="gateInput" type="password" placeholder="Password" autocomplete="off" />
+    <button class="gate-btn" onclick="checkGate()">Accedi</button>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
+
+<!-- Loader -->
+<div id="loader">
+  <div class="ld-logo">Longwave <span>S.p.A.</span></div>
+  <div class="ld-ring"></div>
+  <div class="ld-label">Caricamento in corso…</div>
+</div>
+
+<div id="progress"></div>
+
+<div class="wrap">
+  <aside>
+    <div class="brand">Longwave S.p.A.
+      <small>Analisi aziendale · FY 2025</small>
+    </div>
+    <nav>
+      <a href="#profilo"><span class="n">1</span> Profilo aziendale</a>
+      <a href="#struttura"><span class="n">2</span> Struttura societaria</a>
+      <a href="#patrimoniale"><span class="n">3</span> Stato patrimoniale</a>
+      <a href="#economico"><span class="n">4</span> Conto economico</a>
+      <a href="#indici"><span class="n">5</span> Indici di bilancio</a>
+      <a href="#personale"><span class="n">6</span> Personale</a>
+      <a href="#sedi"><span class="n">7</span> Sedi e unità locali</a>
+      <a href="#giudizio"><span class="n">8</span> Giudizio</a>
+      <a href="#appA" style="margin-top:10px;border-top:1px solid var(--line);padding-top:12px"><span class="n">A</span> Appendice A — SP</a>
+      <a href="#appB"><span class="n">B</span> Appendice B — CE</a>
+      <a href="#appC"><span class="n">C</span> Appendice C — Uffici</a>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="hero">
+      <h1>Longwave S.p.A.</h1>
+      <p class="sub">Analisi finanziaria e valutazione occupazionale — bilancio FY 2025</p>
+      <div class="meta">
+        <strong>Fonte dati:</strong> Visura CCIAA Emilia (doc. T 656116793, estratto 21/06/2026) · XBRL bilancio 31/12/2025 &nbsp;|&nbsp;
+        <strong>CF:</strong> 01922820350 &nbsp;|&nbsp;
+        <strong>REA:</strong> RE-235407 &nbsp;|&nbsp;
+        <strong>Capogruppo:</strong> Z Holding S.p.A. (Gruppo Zucchetti)
+      </div>
+    </div>
+
+    <!-- 1. PROFILO -->
+    <section id="profilo">
+      <h2 class="sec"><span class="num">1</span> Profilo aziendale</h2>
+      <p class="lead">Longwave S.p.A. è una società per azioni con sede a Reggio Emilia, attiva dal 2000 nel commercio all'ingrosso, progettazione, produzione e assistenza tecnica di reti per trasmissione dati, centralini telefonici e sistemi di telecomunicazione. Fa parte del <strong>Gruppo Zucchetti</strong>, uno dei principali gruppi italiani nel software gestionale e ICT.</p>
+
+      <div class="kpis">
+        <div class="kpi"><div class="v">€79,3M</div><div class="l">Valore produzione 2025</div></div>
+        <div class="kpi"><div class="v pos">+8,5%</div><div class="l">Crescita TVP vs 2024</div></div>
+        <div class="kpi"><div class="v">380</div><div class="l">Addetti (medio 2025)</div></div>
+        <div class="kpi"><div class="v pos">€2,49M</div><div class="l">Utile netto 2025</div></div>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead><tr><th>Dato anagrafico</th><th style="text-align:left">Valore</th></tr></thead>
+          <tbody>
+            <tr><td>Ragione sociale</td><td style="text-align:left">LONGWAVE S.p.A.</td></tr>
+            <tr><td>Forma giuridica</td><td style="text-align:left">Società per azioni</td></tr>
+            <tr><td>Sede legale</td><td style="text-align:left">Via Danubio 9, 42124 Reggio Emilia (RE)</td></tr>
+            <tr><td>Codice fiscale / P.IVA</td><td style="text-align:left">01922820350</td></tr>
+            <tr><td>REA</td><td style="text-align:left">RE-235407</td></tr>
+            <tr><td>Data costituzione</td><td style="text-align:left">18/12/2000</td></tr>
+            <tr><td>Data iscrizione RI</td><td style="text-align:left">04/01/2001</td></tr>
+            <tr><td>Durata societaria</td><td style="text-align:left">Fino al 31/12/2050</td></tr>
+            <tr><td>Capitale sociale</td><td style="text-align:left">€ 100.000 (interamente versato)</td></tr>
+            <tr><td>Codice ATECO prevalente</td><td style="text-align:left">46.50.20 — Commercio all'ingrosso di apparecchiature per telecomunicazioni</td></tr>
+            <tr><td>Amministratore Unico</td><td style="text-align:left">Lelli Lello</td></tr>
+            <tr><td>Capogruppo</td><td style="text-align:left">Z Holding S.p.A. (Gruppo Zucchetti)</td></tr>
+            <tr><td>PEC</td><td style="text-align:left">longwave@gruppozucchetti.it</td></tr>
+            <tr><td>Unità locali attive</td><td style="text-align:left">10 (+ sede legale)</td></tr>
+            <tr><td>Addetti al 31/12/2025</td><td style="text-align:left">380</td></tr>
+            <tr><td>Società di revisione</td><td style="text-align:left">BDO Italia S.p.A.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout info">
+        <strong>Oggetto sociale:</strong> Progettazione, produzione, commercializzazione e assistenza tecnica di reti per trasmissione dati (centralini telefonici) e sistemi di telecomunicazione; sviluppo e vendita di software; servizi ICT; installazione e manutenzione di impianti elettronici ed elettrici.
+      </div>
+    </section>
+
+    <!-- 2. STRUTTURA -->
+    <section id="struttura">
+      <h2 class="sec"><span class="num">2</span> Struttura societaria</h2>
+      <p>Longwave è controllata da <strong>Z Holding S.p.A.</strong>, holding del <strong>Gruppo Zucchetti</strong>, realtà italiana di primaria importanza nel software gestionale, HR e ICT con oltre 10.000 dipendenti di gruppo e una presenza capillare sul mercato nazionale. La visura riporta 2 soci/titolari di diritti su azioni.</p>
+
+      <div class="tree">
+        <div class="node holding">
+          <div class="t">Gruppo Zucchetti <span class="badge">Capogruppo</span></div>
+          <div class="d">Z Holding S.p.A. · Lodi · Grande gruppo software/ICT italiano</div>
+        </div>
+        <div class="children">
+          <div class="node">
+            <div class="t">Longwave S.p.A. <span class="badge">Analisi</span></div>
+            <div class="d">Reggio Emilia · TLC, reti dati, assistenza tecnica · 380 dipendenti · €79M fatturato</div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Partecipazioni detenute da Longwave</h3>
+      <p>Longwave detiene a sua volta partecipazioni in imprese controllate (€86.000 in partecipazioni a bilancio, probabilmente quote di piccole controllate operative) e ha crediti verso il gruppo controllante per €4,0M (esigibili entro esercizio, classificati tra le immobilizzazioni finanziarie nel 2025 — assente nel 2024, segnala un finanziamento infragruppo netto).</p>
+
+      <div class="callout">
+        <strong>Nota governance:</strong> La struttura monocratica (Amministratore Unico) e la presenza di un Collegio Sindacale con 3 effettivi e 2 supplenti, più BDO Italia come revisore esterno, sono caratteristiche di una società ben strutturata sotto la direzione unitaria del gruppo. Il codice LEI (815600FC98973275A484) conferma l'operatività nei mercati finanziari come entità regolamentata.
+      </div>
+    </section>
+
+    <!-- 3. STATO PATRIMONIALE -->
+    <section id="patrimoniale">
+      <h2 class="sec"><span class="num">3</span> Stato patrimoniale</h2>
+      <p>Il totale attivo cresce del <strong>+10,0%</strong> a €46,8M. L'incremento principale è nelle immobilizzazioni finanziarie (+€4,0M, credito verso controllante) e nei crediti verso clienti (+€2,2M). La struttura patrimoniale è solidamente capitalizzata con un patrimonio netto di <strong>€14,2M</strong>.</p>
+
+      <div class="kpis">
+        <div class="kpi"><div class="v">€46,8M</div><div class="l">Totale attivo 2025</div></div>
+        <div class="kpi"><div class="v pos">€14,2M</div><div class="l">Patrimonio netto</div></div>
+        <div class="kpi"><div class="v">€20,8M</div><div class="l">Totale debiti</div></div>
+        <div class="kpi"><div class="v">€5,7M</div><div class="l">TFR</div></div>
+      </div>
+
+      <div class="chart-box">
+        <div class="chart-holder"><canvas id="chartSP"></canvas></div>
+        <p class="cap">Composizione dello stato patrimoniale attivo e passivo — confronto 2024 vs 2025 (valori in migliaia €)</p>
+      </div>
+
+      <h3>Struttura attivo</h3>
+      <p>L'attivo circolante rappresenta il <strong>78,2%</strong> del totale attivo, dominato dai crediti commerciali verso clienti (€27,4M, 58,5% del totale attivo). Le immobilizzazioni materiali (€1,9M) sono relativamente contenute, coerenti con un'azienda di servizi e distribuzione che non richiede ingenti investimenti in macchinari. L'avviamento iscritto (€695K) si riduce per ammortamento progressivo.</p>
+
+      <h3>Struttura passivo</h3>
+      <p>Il passivo è dominato dai debiti verso fornitori (€15,5M, 74,4% del totale debiti), indicativo del modello distributivo. L'esposizione bancaria è <strong>minima</strong> (€309K), segnale di ottima autosufficienza finanziaria. Il TFR accumulato (€5,7M) riflette l'anzianità media della forza lavoro.</p>
+
+      <div class="callout good">
+        <strong>Solidità patrimoniale:</strong> Il patrimonio netto copre il 30,4% del totale attivo (debt/equity ratio 2,3x, ma quasi tutto debito commerciale, non finanziario). L'autofinanziamento è sistematico: l'utile di €2,49M viene integralmente destinato a riserva straordinaria, rafforzando anno dopo anno la base patrimoniale.
+      </div>
+    </section>
+
+    <!-- 4. CONTO ECONOMICO -->
+    <section id="economico">
+      <h2 class="sec"><span class="num">4</span> Conto economico</h2>
+      <p>Il 2025 segna un anno di <strong>crescita solida</strong>: i ricavi salgono a €77,9M (+7,8%), l'EBIT a €3,5M (+1,9%) e l'utile netto a €2,49M (+8,9%). La crescita dei costi del personale (+5,9%) e delle materie prime (+11,5%) comprime leggermente i margini operativi, ma la redditività rimane stabile.</p>
+
+      <div class="kpis">
+        <div class="kpi"><div class="v">€77,9M</div><div class="l">Ricavi 2025</div></div>
+        <div class="kpi"><div class="v pos">+7,8%</div><div class="l">Crescita ricavi</div></div>
+        <div class="kpi"><div class="v">4,4%</div><div class="l">Margine EBIT</div></div>
+        <div class="kpi"><div class="v">3,1%</div><div class="l">Margine netto</div></div>
+      </div>
+
+      <div class="chart-box">
+        <div class="chart-holder"><canvas id="chartCE"></canvas></div>
+        <p class="cap">Ricavi vs Valore produzione vs Utile netto — confronto 2024 vs 2025 (valori in milioni €)</p>
+      </div>
+
+      <h3>Breakdown costi di produzione</h3>
+      <div class="chart-box">
+        <div class="chart-holder" style="height:260px"><canvas id="chartCosti"></canvas></div>
+        <p class="cap">Composizione dei costi di produzione 2025 (€75,8M totale)</p>
+      </div>
+
+      <p>La voce di costo maggiore è l'<strong>acquisto di materie prime e merci</strong> (€44,0M, 58,1% dei costi totali), riflettendo la natura distributiva del business. Il costo del personale (€22,2M, 29,3%) è la seconda voce principale e in costante crescita per via dell'espansione della forza lavoro. I servizi (€5,4M) e il godimento di beni di terzi (€2,9M) coprono il restante.</p>
+
+      <div class="callout">
+        <strong>Compensi amministratore:</strong> L'Amministratore Unico Lello Lelli percepisce un compenso annuo di <strong>€220.000</strong>, in linea con la complessità gestionale della società (€79M di ricavi, 380 dipendenti, 11 sedi).
+      </div>
+    </section>
+
+    <!-- 5. INDICI -->
+    <section id="indici">
+      <h2 class="sec"><span class="num">5</span> Indici di bilancio</h2>
+      <p>Gli indicatori finanziari confermano una società <strong>solida e ben gestita</strong>, con margini modesti ma consistenti, debito finanziario trascurabile e ottima copertura degli oneri finanziari.</p>
+
+      <h3>Redditività</h3>
+      <div class="kpis">
+        <div class="kpi"><div class="v">4,4%</div><div class="l">EBIT margin</div></div>
+        <div class="kpi"><div class="v">5,2%</div><div class="l">EBITDA margin</div></div>
+        <div class="kpi"><div class="v">3,1%</div><div class="l">Net margin</div></div>
+        <div class="kpi"><div class="v pos">21,2%</div><div class="l">ROE</div></div>
+      </div>
+
+      <h3>Liquidità e solvibilità</h3>
+      <div class="kpis">
+        <div class="kpi"><div class="v pos">1,37</div><div class="l">Current ratio</div></div>
+        <div class="kpi"><div class="v pos">1,25</div><div class="l">Quick ratio</div></div>
+        <div class="kpi"><div class="v pos">344x</div><div class="l">Interest coverage</div></div>
+        <div class="kpi"><div class="v pos">2,2%</div><div class="l">Debt/equity fin.</div></div>
+      </div>
+
+      <div class="chart-box">
+        <div class="chart-holder" style="height:260px"><canvas id="chartIndici"></canvas></div>
+        <p class="cap">Confronto indici chiave 2024 vs 2025</p>
+      </div>
+
+      <h3>Ciclo commerciale</h3>
+      <table>
+        <thead><tr><th>Indicatore</th><th>2025</th><th>2024</th><th>Δ</th></tr></thead>
+        <tbody>
+          <tr><td>DSO — Giorni crediti clienti</td><td>128 gg</td><td>127 gg</td><td>+1 gg</td></tr>
+          <tr><td>DPO — Giorni debiti fornitori</td><td>128 gg</td><td>135 gg</td><td>−7 gg</td></tr>
+          <tr><td>DIO — Giorni di magazzino</td><td>26 gg</td><td>27 gg</td><td>−1 gg</td></tr>
+          <tr class="tot"><td>Cash Conversion Cycle</td><td>26 gg</td><td>19 gg</td><td>+7 gg</td></tr>
+        </tbody>
+      </table>
+      <p class="muted" style="font-size:.85rem">DSO = (Crediti clienti / Ricavi) × 365. DPO = (Debiti fornitori / Acquisti materie). CCC = DSO + DIO − DPO.</p>
+
+      <div class="callout">
+        <strong>Ciclo commerciale:</strong> La coincidenza quasi perfetta tra DSO e DPO (entrambi ~128 giorni) indica che Longwave incassa dai clienti e paga i fornitori in tempi analoghi, neutralizzando il rischio di capital lock-up. Il CCC di 26 giorni è contenuto e stabile. I tempi di incasso elevati (128 giorni) sono tipici del settore B2B/pubblico amministrazione per soluzioni TLC.
+      </div>
+
+      <h3>Leva finanziaria</h3>
+      <table>
+        <thead><tr><th>Indicatore</th><th>2025</th><th>2024</th></tr></thead>
+        <tbody>
+          <tr><td>Totale debiti</td><td>€20.806.931</td><td>€19.497.554</td></tr>
+          <tr><td>di cui debiti finanziari (banche)</td><td>€308.709</td><td>€28.553</td></tr>
+          <tr><td>Patrimonio netto</td><td>€14.234.405</td><td>€11.743.904</td></tr>
+          <tr><td>Leverage totale (D/E)</td><td>1,46x</td><td>1,66x</td></tr>
+          <tr><td>Leverage finanziario (Deb.fin./PN)</td><td>0,022x</td><td>0,002x</td></tr>
+          <tr><td>Oneri finanziari</td><td>€10.192</td><td>€23.534</td></tr>
+          <tr class="tot"><td>Interest coverage (EBIT/OF)</td><td>344x</td><td>146x</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout good">
+        <strong>Debito finanziario quasi nullo:</strong> Con soli €309K di debiti bancari su €79M di ricavi, Longwave opera in sostanziale <em>debt-free</em>. Il leverage totale (1,46x) è composto quasi interamente da debiti commerciali operativi (fornitori, INPS, tributari), non da finanziamenti. La società si autofinanzia integralmente con i flussi di cassa operativi.
+      </div>
+    </section>
+
+    <!-- 6. PERSONALE -->
+    <section id="personale">
+      <h2 class="sec"><span class="num">6</span> Personale</h2>
+      <p>La forza lavoro è in <strong>costante espansione</strong>: dagli 331 addetti medi del 2023 agli 380 del 2025 (+14,8% in tre anni). Il costo medio per dipendente è in linea con il settore ICT/TLC emiliano-romagnolo.</p>
+
+      <div class="kpis">
+        <div class="kpi"><div class="v">380</div><div class="l">Addetti medi 2025 (INPS)</div></div>
+        <div class="kpi"><div class="v pos">+14,8%</div><div class="l">Crescita addetti 2023→2025</div></div>
+        <div class="kpi"><div class="v">€43.069</div><div class="l">RAL media stimata</div></div>
+        <div class="kpi"><div class="v">€59.422</div><div class="l">Costo medio totale/dip.</div></div>
+      </div>
+
+      <div class="chart-box">
+        <div class="chart-holder" style="height:260px"><canvas id="chartDip"></canvas></div>
+        <p class="cap">Andamento addetti per trimestre 2023–2025 (fonte INPS, da visura CCIAA)</p>
+      </div>
+
+      <h3>Analisi del costo del lavoro 2025</h3>
+      <table>
+        <thead><tr><th>Voce</th><th>2025</th><th>2024</th><th>Variazione</th></tr></thead>
+        <tbody>
+          <tr><td>Salari e stipendi</td><td>€16.107.389</td><td>€15.312.846</td><td class="pos">+5,2%</td></tr>
+          <tr><td>Oneri sociali</td><td>€4.899.040</td><td>€4.556.019</td><td class="pos">+7,5%</td></tr>
+          <tr><td>TFR (accantonamento anno)</td><td>€1.217.041</td><td>€1.113.327</td><td class="pos">+9,3%</td></tr>
+          <tr><td>Altri costi del personale</td><td>€400</td><td>€400</td><td>0%</td></tr>
+          <tr class="tot"><td>Totale costo del personale</td><td>€22.223.870</td><td>€20.982.592</td><td class="pos">+5,9%</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Metrica per dipendente (2025)</h3>
+      <table>
+        <thead><tr><th>Indicatore</th><th>Valore per addetto</th></tr></thead>
+        <tbody>
+          <tr><td>Ricavi generati</td><td><strong>€208.254</strong></td></tr>
+          <tr><td>Valore aggiunto (EBIT)</td><td><strong>€9.375</strong></td></tr>
+          <tr><td>RAL media stimata (stipendi / n.dip.)</td><td><strong>€43.069</strong></td></tr>
+          <tr><td>Costo totale per l'azienda</td><td><strong>€59.422</strong></td></tr>
+          <tr><td>Accantonamento TFR annuo</td><td><strong>€3.254</strong></td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>Forza lavoro:</strong> Con 48 "altri dipendenti" indicati nell'XBRL (probabilmente tecnici/specialisti) su 374 medio XBRL, Longwave ha una base di personale tecnico significativa. L'azienda non ha subito ristrutturazioni — al contrario, ha assunto sistematicamente negli ultimi tre anni, con un picco estivo (385 nel Q2 2025) e leggero assestamento a fine anno (372 al Q4).
+      </div>
+    </section>
+
+    <!-- 7. SEDI -->
+    <section id="sedi">
+      <h2 class="sec"><span class="num">7</span> Sedi e unità locali</h2>
+      <p>Longwave ha una presenza geografica distribuita su tutto il territorio nazionale con <strong>11 sedi attive</strong> (inclusa la sede legale) concentrate nel Nord e Centro Italia, più alcune cessate nel corso degli anni che testimoniano l'evoluzione strategica dell'azienda.</p>
+
+      <h3>Unità locali attive</h3>
+      <div class="geo-grid">
+        <div class="geo-card active">
+          <div class="city">Reggio Emilia (RE)</div>
+          <div class="addr">Via Danubio 9, 42124</div>
+          <div class="dates">Dal 18/12/2000 · <em>Sede Legale</em></div>
+          <span class="tag">ATTIVA</span>
+        </div>
+        <div class="geo-card active">
+          <div class="city">Reggio Emilia (RE)</div>
+          <div class="addr">Via F.lli Guerra 35, 42124</div>
+          <div class="dates">Dal 14/04/2003 · Ufficio + Deposito</div>
+          <span class="tag">ATTIVA</span>
+        </div>
+        <div class="geo-card active">
+          <div class="city">Bologna (BO)</div>
+          <div class="addr">Via Corazza 12, 40128</div>
+          <div class="dates">Dal 17/10/2005 · Ufficio</div>
+          <span class="tag">ATTIVA</span>
+        </div>
+        <div class="geo-card active">
+          <div class="city">Bologna (BO)</div>
+          <div class="addr">Via Rimini 10, 40128</div>
+          <div class="dates">Dal 01/09/2019 · Ufficio Assistenza</div>
+          <span class="tag">ATTIVA</span>
+        </div>
+        <div class="geo-card active">
+          <div class="city">Modena (MO)</div>
+          <div class="addr">Via Vellani Marchi 50, 41124</div>
+          <div class="dates">Dal 01/02/2007 · Ufficio</div>
+          <span class="tag">ATTIVA</span>
+        </div>
+        <div class="geo-card active">
+          <div class="city">Parma (PR)</div>
+          <div class="addr">Via G. e G. Sicuri 34/A, 43124</div>
+          <div class="dates">Dal 27/03/2025 · Ufficio</div>
+          <span class="tag">ATTIVA</span>
+        </div>
+        <div class="geo-card active">
+          <div class="city">Besana in Brianza (MB)</div>
+          <div class="addr">Via Garibaldi 20, 20842</div>
+          <div class="dates">Dal 01/01/2019 · Sede Operativa</div>
+          <span class="tag">ATTIVA</span>
+        </div>
+        <div class="geo-card active">
+          <div class="city">Cassina de' Pecchi (MI)</div>
+          <div class="addr">Via Roma 108, 20051</div>
+          <div class="dates">Dal 01/10/2022 · Ufficio + Magazzino</div>
+          <span class="tag">ATTIVA</span>
+        </div>
+        <div class="geo-card active">
+          <div class="city">Noventa Padovana (PD)</div>
+          <div class="addr">Via della Resistenza 18, 35027</div>
+          <div class="dates">Dal 01/04/2015 · Ufficio Assistenza</div>
+          <span class="tag">ATTIVA</span>
+        </div>
+        <div class="geo-card active">
+          <div class="city">Roma (RM)</div>
+          <div class="addr">Via Tempio del Cielo 1/3/5, 00144</div>
+          <div class="dates">Dal 01/03/2011 · Ufficio</div>
+          <span class="tag">ATTIVA</span>
+        </div>
+        <div class="geo-card active">
+          <div class="city">Verona (VR)</div>
+          <div class="addr">Viale del Commercio 47, 37135</div>
+          <div class="dates">Dal 01/10/2019 · Ufficio Commerciale</div>
+          <span class="tag">ATTIVA</span>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <strong>Copertura geografica:</strong> 5 province dell'Emilia-Romagna (RE, BO, MO, PR), Lombardia (MB, MI), Veneto (PD, VR) e Lazio (RM). La presenza su 9 province in 4 regioni riflette la copertura commerciale e tecnica del territorio italiano settentrionale e centrale.
+      </div>
+    </section>
+
+    <!-- 8. GIUDIZIO -->
+    <section id="giudizio">
+      <h2 class="sec"><span class="num">8</span> Giudizio</h2>
+      <p class="lead">Valutazione complessiva di Longwave S.p.A. con orientamento all'opportunità lavorativa.</p>
+
+      <h3>Snapshot finanziario</h3>
+      <div class="kpis">
+        <div class="kpi"><div class="v pos">A−</div><div class="l">Rating sintetico liquidità</div></div>
+        <div class="kpi"><div class="v pos">+8,5%</div><div class="l">Crescita ricavi</div></div>
+        <div class="kpi"><div class="v pos">344x</div><div class="l">Copertura interessi</div></div>
+        <div class="kpi"><div class="v pos">Solida</div><div class="l">Continuità aziendale</div></div>
+      </div>
+
+      <h3>Punti di forza e debolezza</h3>
+      <div class="cols2">
+        <div class="panel good">
+          <h4>✅ Punti di forza</h4>
+          <ul>
+            <li>Debito finanziario quasi nullo (€309K su €79M ricavi)</li>
+            <li>Crescita ricavi sistematica (+7,8% YoY, +14,8% addetti in 3 anni)</li>
+            <li>Utile netto positivo e in crescita per almeno 2 anni consecutivi</li>
+            <li>Appartenenza al Gruppo Zucchetti: stabilità proprietaria consolidata</li>
+            <li>Interest coverage di 344x: nessun rischio di stress finanziario</li>
+            <li>Autofinanziamento integrale — utile destinato a riserva, non distribuito</li>
+            <li>Patrimonio netto in crescita (+21,2% ROE su base apertura PN)</li>
+            <li>Revisione BDO: bilancio certificato da soggetto terzo indipendente</li>
+            <li>Presenza geografica consolidata in 9 province</li>
+          </ul>
+        </div>
+        <div class="panel warn">
+          <h4>⚠️ Elementi da monitorare</h4>
+          <ul>
+            <li>EBIT margin 4,4%: margini contenuti, tipici della distribuzione TLC</li>
+            <li>DSO 128 giorni: crediti commerciali elevati, probabile esposizione PA</li>
+            <li>Margine netto 3,1%: business a bassa redditività unitaria, volume-driven</li>
+            <li>Costo materie +11,5% vs ricavi +7,8%: compressione margini in corso</li>
+            <li>TFR stock €5,7M: obbligo futuro significativo, rallenta la liquidità netta</li>
+            <li>Cash Conversion Cycle peggiorato (+7gg): leggermente più lento nel 2025</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Valutazione come potenziale datore di lavoro</h3>
+      <p>Longwave si presenta come un'azienda <strong>affidabile e in crescita</strong> per un candidato che valuti un'opportunità di impiego. L'analisi finanziaria suggerisce un contesto lavorativo stabile, con capacità di assunzione dimostrata e retribuzioni in linea con il mercato.</p>
+
+      <ul class="checklist">
+        <li><span class="ic">✅</span><div><strong>Stabilità retributiva:</strong> RAL media ~€43K/anno, con costi del personale in aumento (+5,9%) — segnale di dinamiche salariali positive.</div></li>
+        <li><span class="ic">✅</span><div><strong>Sicurezza occupazionale:</strong> Assunzioni nette in 3 anni (+49 addetti), nessuna ristrutturazione rilevata. Piano di crescita confermato.</div></li>
+        <li><span class="ic">✅</span><div><strong>Solidità del datore:</strong> Nessun debito finanziario critico, bilancio certificato BDO, continuità aziendale evidente.</div></li>
+        <li><span class="ic">✅</span><div><strong>Contesto di gruppo:</strong> Far parte del Gruppo Zucchetti offre opportunità di mobilità interna, welfare di gruppo e maggiore stabilità sistemica.</div></li>
+        <li><span class="ic">⚠️</span><div><strong>Livello retributivo:</strong> €43K RAL media include profili eterogenei (tecnici, commerciali, admin). Negoziare sopra soglia per ruoli specialistici è ragionevole.</div></li>
+        <li><span class="ic">⚠️</span><div><strong>Margini contenuti:</strong> Il settore distribuzione TLC opera su margini stretti. I bonus variabili potrebbero essere limitati rispetto a settori ad alta marginalità.</div></li>
+        <li><span class="ic">ℹ️</span><div><strong>Sede di riferimento:</strong> HQ a Reggio Emilia; smart working probabile ma non confermato dalla visura. Valutare la presenza richiesta in base alla sede assegnata.</div></li>
+        <li><span class="ic">ℹ️</span><div><strong>Compenso AD:</strong> €220K/anno per l'Amm.re Unico su 380 dipendenti e €79M ricavi — governance non costosa, segnale di gestione contenuta.</div></li>
+      </ul>
+
+      <h3>Benchmark retributivo</h3>
+      <table>
+        <thead><tr><th>Profilo</th><th>Range mercato stimato</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>Tecnico telecomunicazioni Jr</td><td>€28.000 – €35.000</td><td>Ingresso, profilo entry-level</td></tr>
+          <tr><td>Tecnico TLC / sistemista Sr</td><td>€38.000 – €50.000</td><td>3-8 anni esperienza</td></tr>
+          <tr><td>Commerciale/Account Manager</td><td>€35.000 – €48.000</td><td>+ variabile performance</td></tr>
+          <tr><td>Project Manager ICT</td><td>€45.000 – €60.000</td><td>RAL media ~€43K indica spazio sopra</td></tr>
+          <tr><td>Responsabile tecnico / Team Lead</td><td>€52.000 – €68.000</td><td>Stima per profili senior</td></tr>
+        </tbody>
+      </table>
+
+      <div class="verdict go">
+        <h3>Verdetto: opportunità lavorativa raccomandata con consapevolezza</h3>
+        <p>Longwave S.p.A. è un <strong>datore di lavoro affidabile e strutturato</strong>. La solidità finanziaria è fuori discussione: assenza di debito critico, autofinanziamento, bilancio certificato, crescita costante e appartenenza a un gruppo solido come Zucchetti eliminano i principali rischi tipici delle PMI (rischio di chiusura, mancato pagamento stipendi, instabilità gestionale).</p>
+        <p>Il profilo ideale di candidato è chi cerca <strong>stabilità, crescita graduale e contesto strutturato</strong> nel settore TLC/ICT, con possibilità di sviluppo anche a livello di gruppo. Chi cerca massimizzazione salariale a breve termine o ambienti ad alto rischio/alta ricompensa troverà un contesto probabilmente più conservativo rispetto a startup o grandi corporate.</p>
+        <p><strong>Suggerimento negoziale:</strong> In fase di colloquio, utilizzare la RAL media stimata di €43K come benchmark inferiore per profili con esperienza. Il TFR accumulato (€5,7M su 380 dipendenti = ~€15K/persona) conferma che i dipendenti restano a lungo — fattore positivo per la negoziazione di benefici a lungo termine.</p>
+      </div>
+    </section>
+
+    <!-- APPENDICE A -->
+    <section id="appA">
+      <h2 class="sec"><span class="num">A</span> Appendice A — Stato Patrimoniale (XBRL)</h2>
+      <p class="muted" style="font-size:.85rem">Dati estratti direttamente dal file XBRL <code>bilancio_656116793.xbrl</code> — fonte primaria e autorizzativa. Valori in euro.</p>
+
+      <h3>Attivo</h3>
+      <table>
+        <thead><tr><th>Voce</th><th>31/12/2025</th><th>31/12/2024</th></tr></thead>
+        <tbody>
+          <tr><td><strong>B) Immobilizzazioni</strong></td><td></td><td></td></tr>
+          <tr class="sub"><td>I — Immobilizzazioni immateriali</td><td></td><td></td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Costi di impianto e ampliamento</td><td>658</td><td>988</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Diritti di brevetto e opere dell'ingegno</td><td>130.282</td><td>188.366</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Concessioni, licenze, marchi</td><td>0</td><td>0</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Avviamento</td><td>695.139</td><td>871.273</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Altre immobilizzazioni immateriali</td><td>11.730</td><td>10.758</td></tr>
+          <tr class="sub"><td><em>Totale imm. immateriali</em></td><td><em>837.809</em></td><td><em>1.071.385</em></td></tr>
+          <tr class="sub"><td>II — Immobilizzazioni materiali</td><td></td><td></td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Terreni e fabbricati</td><td>1.226.535</td><td>1.236.886</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Impianti e macchinario</td><td>41.829</td><td>20.431</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Attrezzature industriali e commerciali</td><td>2.000</td><td>4.513</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Altri beni</td><td>672.868</td><td>584.558</td></tr>
+          <tr class="sub"><td><em>Totale imm. materiali</em></td><td><em>1.943.232</em></td><td><em>1.846.388</em></td></tr>
+          <tr class="sub"><td>III — Immobilizzazioni finanziarie</td><td></td><td></td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Partecipazioni (imprese controllate + altre)</td><td>104.150</td><td>104.150</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Crediti verso controllanti</td><td>4.008.025</td><td>0</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Crediti verso altri (oltre esercizio)</td><td>17.931</td><td>19.606</td></tr>
+          <tr class="sub"><td><em>Totale imm. finanziarie</em></td><td><em>4.130.106</em></td><td><em>123.756</em></td></tr>
+          <tr class="tot"><td>TOTALE IMMOBILIZZAZIONI (B)</td><td>6.911.147</td><td>3.041.529</td></tr>
+          <tr><td><strong>C) Attivo circolante</strong></td><td></td><td></td></tr>
+          <tr class="sub"><td>I — Rimanenze</td><td></td><td></td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Lavori in corso su ordinazione</td><td>401.520</td><td>0</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Prodotti finiti e merci</td><td>2.781.467</td><td>2.971.833</td></tr>
+          <tr class="sub"><td><em>Totale rimanenze</em></td><td><em>3.182.987</em></td><td><em>2.971.833</em></td></tr>
+          <tr class="sub"><td>II — Crediti</td><td></td><td></td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Verso clienti</td><td>27.367.202</td><td>25.169.782</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Verso imprese controllate</td><td>75.864</td><td>23.570</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Verso sottoposte a controllo controllanti</td><td>765.129</td><td>488.767</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Crediti tributari</td><td>265.515</td><td>1.619.921</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Imposte anticipate</td><td>421.608</td><td>401.363</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Verso altri</td><td>39.180</td><td>21.115</td></tr>
+          <tr class="sub"><td><em>Totale crediti</em></td><td><em>28.934.498</em></td><td><em>27.724.518</em></td></tr>
+          <tr class="sub"><td>IV — Disponibilità liquide</td><td></td><td></td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Depositi bancari e postali</td><td>4.459.587</td><td>4.281.016</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Danaro e valori in cassa</td><td>486</td><td>165</td></tr>
+          <tr class="sub"><td><em>Totale disponibilità liquide</em></td><td><em>4.460.073</em></td><td><em>4.281.181</em></td></tr>
+          <tr class="tot"><td>TOTALE ATTIVO CIRCOLANTE (C)</td><td>36.577.558</td><td>34.977.532</td></tr>
+          <tr><td><strong>D) Ratei e risconti attivi</strong></td><td>3.279.043</td><td>4.485.668</td></tr>
+          <tr class="tot"><td><strong>TOTALE ATTIVO</strong></td><td><strong>46.767.748</strong></td><td><strong>42.504.729</strong></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Passivo</h3>
+      <table>
+        <thead><tr><th>Voce</th><th>31/12/2025</th><th>31/12/2024</th></tr></thead>
+        <tbody>
+          <tr><td><strong>A) Patrimonio netto</strong></td><td></td><td></td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;I — Capitale</td><td>100.000</td><td>100.000</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;IV — Riserva legale</td><td>20.000</td><td>20.000</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;VI — Altre riserve</td><td></td><td></td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Riserva straordinaria</td><td>11.464.738</td><td>9.176.972</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Versamenti in conto capitale</td><td>136.046</td><td>136.046</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Riserva avanzo di fusione</td><td>23.117</td><td>23.117</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Varie altre riserve</td><td>3</td><td>2</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;IX — Utile (perdita) dell'esercizio</td><td>2.490.507</td><td>2.287.767</td></tr>
+          <tr class="tot"><td>TOTALE PATRIMONIO NETTO (A)</td><td>14.234.405</td><td>11.743.904</td></tr>
+          <tr><td><strong>B) Fondi per rischi e oneri</strong></td><td>119.890</td><td>112.165</td></tr>
+          <tr><td><strong>C) TFR di lavoro subordinato</strong></td><td>5.693.453</td><td>5.222.989</td></tr>
+          <tr><td><strong>D) Debiti</strong></td><td></td><td></td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Verso banche</td><td>308.709</td><td>28.553</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Verso fornitori</td><td>15.470.026</td><td>14.618.128</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Verso imprese controllate</td><td>59.700</td><td>249.400</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Verso controllanti</td><td>(3.120)</td><td>210</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Verso sottoposte a controllo controllanti</td><td>319.011</td><td>318.729</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Debiti tributari</td><td>798.490</td><td>776.544</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Verso istituti previdenziali</td><td>1.183.816</td><td>1.130.052</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;• Altri debiti</td><td>2.670.299</td><td>2.375.938</td></tr>
+          <tr class="tot"><td>TOTALE DEBITI (D)</td><td>20.806.931</td><td>19.497.554</td></tr>
+          <tr><td><strong>E) Ratei e risconti passivi</strong></td><td>5.913.069</td><td>5.928.117</td></tr>
+          <tr class="tot"><td><strong>TOTALE PASSIVO</strong></td><td><strong>46.767.748</strong></td><td><strong>42.504.729</strong></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- APPENDICE B -->
+    <section id="appB">
+      <h2 class="sec"><span class="num">B</span> Appendice B — Conto Economico (XBRL)</h2>
+      <p class="muted" style="font-size:.85rem">Dati estratti direttamente dal file XBRL — fonte primaria e autorizzativa. Valori in euro.</p>
+
+      <table>
+        <thead><tr><th>Voce</th><th>2025</th><th>2024</th><th>Var %</th></tr></thead>
+        <tbody>
+          <tr><td><strong>A) Valore della produzione</strong></td><td></td><td></td><td></td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;1) Ricavi vendite e prestazioni</td><td>77.886.509</td><td>72.242.203</td><td class="pos">+7,8%</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;Variazione rimanenze prodotti</td><td>190.366</td><td>384.135</td><td class="neg">−50,5%</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;5) Altri ricavi e proventi</td><td>1.226.193</td><td>470.739</td><td class="pos">+160%</td></tr>
+          <tr class="tot"><td>TOTALE VALORE PRODUZIONE (A)</td><td>79.303.068</td><td>73.097.077</td><td class="pos">+8,5%</td></tr>
+          <tr><td><strong>B) Costi della produzione</strong></td><td></td><td></td><td></td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;6) Acquisti materie prime/merci</td><td>44.046.700</td><td>39.491.253</td><td class="neg">+11,5%</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;7) Variazione rimanenze materie</td><td>190.366</td><td>384.135</td><td>—</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;8) Servizi</td><td>5.371.703</td><td>5.263.319</td><td class="neg">+2,1%</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;9) Godimento beni di terzi</td><td>2.865.094</td><td>2.468.640</td><td class="neg">+16,1%</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;10) Costi del personale</td><td></td><td></td><td></td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Salari e stipendi</td><td>16.107.389</td><td>15.312.846</td><td class="neg">+5,2%</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Oneri sociali</td><td>4.899.040</td><td>4.556.019</td><td class="neg">+7,5%</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TFR (accantonamento)</td><td>1.217.041</td><td>1.113.327</td><td class="neg">+9,3%</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Altri costi personale</td><td>400</td><td>400</td><td>0%</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;<em>Totale costi personale</em></td><td><em>22.223.870</em></td><td><em>20.982.592</em></td><td class="neg"><em>+5,9%</em></td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;10-bis) Ammortamenti e svalutazioni</td><td>637.955</td><td>590.945</td><td class="neg">+7,9%</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;14) Oneri diversi di gestione</td><td>460.682</td><td>475.775</td><td class="pos">−3,2%</td></tr>
+          <tr class="tot"><td>TOTALE COSTI PRODUZIONE (B)</td><td>75.796.370</td><td>69.656.659</td><td class="neg">+8,8%</td></tr>
+          <tr class="tot"><td><strong>DIFFERENZA A−B (EBIT)</strong></td><td><strong>3.506.698</strong></td><td><strong>3.440.418</strong></td><td class="pos"><strong>+1,9%</strong></td></tr>
+          <tr><td><strong>C) Proventi e oneri finanziari</strong></td><td></td><td></td><td></td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;Proventi da crediti immobilizzati</td><td>8.025</td><td>0</td><td>—</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;Utili/perdite su cambi</td><td>38.450</td><td>(7.704)</td><td>—</td></tr>
+          <tr class="sub"><td>&nbsp;&nbsp;&nbsp;Interessi e altri oneri finanziari</td><td>(10.192)</td><td>(23.534)</td><td class="pos">−56,7%</td></tr>
+          <tr class="tot"><td>RISULTATO PRIMA DELLE IMPOSTE</td><td>3.761.214</td><td>3.454.989</td><td class="pos">+8,9%</td></tr>
+          <tr><td>Imposte sul reddito (correnti + differite)</td><td>(1.270.707)</td><td>(1.167.222)</td><td class="neg">+8,9%</td></tr>
+          <tr class="tot"><td><strong>UTILE (PERDITA) DELL'ESERCIZIO</strong></td><td><strong>2.490.507</strong></td><td><strong>2.287.767</strong></td><td class="pos"><strong>+8,9%</strong></td></tr>
+        </tbody>
+      </table>
+
+      <p class="muted" style="font-size:.82rem;margin-top:6px">* EBITDA 2025 = EBIT €3.506.698 + Ammortamenti €637.955 = <strong>€4.144.653</strong> (EBITDA margin 5,2%)</p>
+    </section>
+
+    <!-- APPENDICE C -->
+    <section id="appC">
+      <h2 class="sec"><span class="num">C</span> Appendice C — Storia degli uffici</h2>
+      <p class="muted" style="font-size:.85rem">Dati estratti dalla visura CCIAA (doc. T 656116793, 21/06/2026). Sezione 11 — Sedi secondarie e unità locali.</p>
+
+      <h3>Sedi secondarie ed unità locali cessate</h3>
+      <table>
+        <thead><tr><th>Città</th><th>Indirizzo</th><th>Apertura</th><th>Cessazione</th><th>Tipo</th></tr></thead>
+        <tbody>
+          <tr><td>Reggio Emilia (RE)</td><td>Via C. Teggi 85, 42100</td><td>01/02/2001</td><td>15/09/2003</td><td>Ufficio</td></tr>
+          <tr><td>Bologna (BO)</td><td>Via P. Gobetti 52, 40129</td><td>01/02/2001</td><td>01/04/2009</td><td>Ufficio</td></tr>
+          <tr><td>Parma (PR)</td><td>Str. Traversante S. Leonardo 13/A</td><td>21/08/2005</td><td>10/06/2006</td><td>Ufficio</td></tr>
+          <tr><td>Parma (PR)</td><td>Via Italo Pinazzi 71/A, 43122</td><td>10/06/2006</td><td>27/03/2025</td><td>Ufficio</td></tr>
+          <tr><td>Parma (PR)</td><td>Via G. e G. Sicuri 34/A, 43124</td><td>01/07/2023</td><td>27/03/2025</td><td>Ufficio (sostituito da PR/4)</td></tr>
+          <tr><td>Milano (MI)</td><td>Via Ornato Luigi 134/136, 20162</td><td>01/09/2009</td><td>01/04/2013</td><td>Ufficio</td></tr>
+          <tr><td>Milano (MI)</td><td>Via Pitteri Riccardo 10, 20134</td><td>01/04/2013</td><td>21/12/2022</td><td>Ufficio assistenza</td></tr>
+          <tr><td>Cornegliano Laudense (LO)</td><td>Via Toscana 36/38, 26854</td><td>01/01/2011</td><td>01/04/2015</td><td>Magazzino</td></tr>
+          <tr><td>Lodi (LO)</td><td>Via San Fereolo 9/A, 26900</td><td>01/04/2015</td><td>21/11/2017</td><td>Ufficio</td></tr>
+          <tr><td>Lodi (LO)</td><td>Viale Dante 20, 26900</td><td>01/11/2017</td><td>28/02/2019</td><td>Ufficio</td></tr>
+          <tr><td>Granarolo dell'Emilia (BO)</td><td>Via Cadriano 43, 40057</td><td>01/01/2019</td><td>31/03/2019</td><td>Sede operativa</td></tr>
+          <tr><td>Ciampino (RM)</td><td>Via Bari 56, 00043</td><td>01/01/2019</td><td>02/12/2019</td><td>Ufficio assistenza</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout info">
+        <strong>Lettura storica:</strong> La storia degli uffici rivela una società che ha <strong>razionalizzato progressivamente</strong> la propria presenza territoriale, abbandonando le sedi storiche milanesi (via Ornato e via Pitteri) a favore di Cassina de' Pecchi (2022), e rinnovando la sede parmense. La presenza lodigiana (2011-2019) è stata completamente dismessa. La continuità di Reggio Emilia dal 2001 e di Bologna dal 2005 evidenzia il cuore emiliano dell'azienda.
+      </div>
+    </section>
+
+    <footer>
+      Documento generato il 21/06/2026 · Fonte: visura CCIAA Emilia (T 656116793) e XBRL bilancio_656116793.xbrl ·
+      I dati finanziari sono estratti dal bilancio di esercizio certificato BDO Italia S.p.A. al 31/12/2025 ·
+      Analisi elaborata a scopo informativo — non costituisce consulenza finanziaria o legale.
+    </footer>
+  </main>
+</div>
+
+<script>
+// ── Password gate ──
+const HASH="39c26b9361309b1f11682ee3a77570a39fa0b52c4720004ed25184a63759fb7d";
+async function sha256(s){
+  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+async function checkGate(){
+  const val=document.getElementById("gateInput").value;
+  const h=await sha256(val);
+  if(h===HASH){
+    document.getElementById("gate").classList.add("hide");
+    sessionStorage.setItem("gateOk","1");
+  } else {
+    const err=document.getElementById("gateErr");
+    err.textContent="Password errata. Riprovare.";
+    document.getElementById("gateInput").value="";
+    document.getElementById("gateInput").focus();
+    setTimeout(()=>err.textContent="",2500);
+  }
+}
+document.getElementById("gateInput").addEventListener("keydown",e=>{
+  if(e.key==="Enter") checkGate();
+});
+if(sessionStorage.getItem("gateOk")==="1"){
+  document.getElementById("gate").classList.add("hide");
+}
+
+// ── Loader ──
+window.addEventListener("load",()=>{
+  document.getElementById("loader").classList.add("hide");
+});
+
+// ── Progress bar ──
+const prog=document.getElementById("progress");
+window.addEventListener("scroll",()=>{
+  const h=document.documentElement;
+  const pct=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100;
+  prog.style.width=pct+"%";
+});
+
+// ── Active nav ──
+const sections=document.querySelectorAll("section[id]");
+const links=document.querySelectorAll("nav a");
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      links.forEach(l=>l.classList.remove("active"));
+      const a=document.querySelector(`nav a[href="#${e.target.id}"]`);
+      if(a) a.classList.add("active");
+    }
+  });
+},{rootMargin:"-30% 0px -60% 0px"});
+sections.forEach(s=>obs.observe(s));
+
+// ── Charts ──
+const navy="#1f3a5f", blue="#2e6ca4", lblue="#7aa9d0", green="#2e7d32",
+      amber="#b8860b", red="#c0392b", light="#eef3f8";
+
+// SP bar chart
+new Chart(document.getElementById("chartSP"),{
+  type:"bar",
+  data:{
+    labels:["Immobilizzazioni","Attivo circolante","Ratei attivi","PN","Fondi+TFR","Debiti","Ratei passivi"],
+    datasets:[
+      {label:"2024 Attivo",data:[3042,34978,4486,null,null,null,null],backgroundColor:lblue+"aa",borderColor:lblue,borderWidth:1},
+      {label:"2025 Attivo",data:[6911,36578,3279,null,null,null,null],backgroundColor:blue+"cc",borderColor:blue,borderWidth:1},
+      {label:"2024 Passivo",data:[null,null,null,11744,5335,19498,5928],backgroundColor:"#e8a87caa",borderColor:"#e8a87c",borderWidth:1},
+      {label:"2025 Passivo",data:[null,null,null,14234,5813,20807,5913],backgroundColor:"#d4642acc",borderColor:"#d4642a",borderWidth:1},
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:"top"},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: €${ctx.raw ? (ctx.raw/1000).toFixed(0)+'K' : '—'}`}}},
+    scales:{y:{ticks:{callback:v=>"€"+(v/1000).toFixed(0)+"K"}}}}
+});
+
+// CE bar chart
+new Chart(document.getElementById("chartCE"),{
+  type:"bar",
+  data:{
+    labels:["2024","2025"],
+    datasets:[
+      {label:"Ricavi",data:[72.24,77.89],backgroundColor:blue+"cc",borderColor:blue,borderWidth:1},
+      {label:"Valore produzione",data:[73.10,79.30],backgroundColor:lblue+"cc",borderColor:lblue,borderWidth:1},
+      {label:"Utile netto",data:[2.29,2.49],backgroundColor:green+"cc",borderColor:green,borderWidth:1},
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:"top"}},
+    scales:{y:{ticks:{callback:v=>"€"+v.toFixed(1)+"M"}}}}
+});
+
+// Costi donut
+new Chart(document.getElementById("chartCosti"),{
+  type:"doughnut",
+  data:{
+    labels:["Materie prime/merci","Costo personale","Servizi","Godimento beni terzi","Ammortamenti","Oneri diversi"],
+    datasets:[{
+      data:[44047,22224,5372,2865,638,461],
+      backgroundColor:[navy,blue,lblue,"#4caf50","#ff9800","#9c27b0"],
+      borderWidth:2,borderColor:"#fff"
+    }]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:"right"},
+      tooltip:{callbacks:{label:ctx=>`${ctx.label}: €${(ctx.raw/1000).toFixed(0)}K (${((ctx.raw/75796)*100).toFixed(1)}%)`}}}}
+});
+
+// Indici radar
+new Chart(document.getElementById("chartIndici"),{
+  type:"bar",
+  data:{
+    labels:["EBIT margin %","Net margin %","Current ratio","Quick ratio","ROE %"],
+    datasets:[
+      {label:"2024",data:[4.71,3.13,1.31,1.18,19.48],backgroundColor:lblue+"aa",borderColor:lblue,borderWidth:1},
+      {label:"2025",data:[4.42,3.14,1.37,1.25,21.20],backgroundColor:blue+"cc",borderColor:blue,borderWidth:1}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:"top"}},
+    scales:{y:{ticks:{callback:v=>v+""}}}}
+});
+
+// Dipendenti chart
+new Chart(document.getElementById("chartDip"),{
+  type:"line",
+  data:{
+    labels:["Q1 2023","Q2 2023","Q3 2023","Q4 2023","Q1 2024","Q2 2024","Q3 2024","Q4 2024","Q1 2025","Q2 2025","Q3 2025","Q4 2025"],
+    datasets:[{
+      label:"Dipendenti",
+      data:[314,326,336,346,354,357,369,380,382,385,379,372],
+      borderColor:navy,backgroundColor:navy+"22",
+      pointBackgroundColor:navy,pointRadius:4,tension:.35,fill:true
+    }]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{y:{min:290,ticks:{stepSize:20}}}}
+});
+</script>
+</body>
+</html>
